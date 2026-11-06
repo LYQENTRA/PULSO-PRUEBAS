@@ -1,187 +1,271 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#050505">
-  <meta name="description" content="PULSO - Reproductor de música local">
-  <title>PULSO - Music Player</title>
+  <meta name="description" content="PULSO - Reproductor de música de LYQENTRA">
+  <title>PULSO | Reproductor de Música</title>
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
+<div class="app">
 
-  <div class="app">
+  <!-- ENCABEZADO -->
+  <header class="topbar">
+    <button class="icon-btn" id="menuBtn" aria-label="Abrir menú">
+      <span class="hamburger">☰</span>
+    </button>
 
-    <!-- ENCABEZADO -->
-    <header class="topbar">
-      <button class="icon-btn" id="menuBtn" aria-label="Abrir menú">
-        <span class="hamburger">☰</span>
-      </button>
-
-      <div class="brand">
-        <div class="brand-icon">♫</div>
-        <div>
-          <h1>PULSO</h1>
-          <span>Reproductor de Música</span>
-        </div>
+    <div class="brand">
+      <div class="brand-icon" aria-hidden="true">
+        <span></span><span></span><span></span>
+        <span></span><span></span>
       </div>
-
-      <div class="header-actions">
-        <button class="icon-btn" id="searchBtn" aria-label="Buscar">⌕</button>
-        <button class="icon-btn" id="moreBtn" aria-label="Más opciones">⋮</button>
+      <div class="brand-text">
+        <h1>PULSO</h1>
+        <span>Reproductor de Música</span>
       </div>
-    </header>
-
-    <!-- BUSCADOR -->
-    <div class="search-panel" id="searchPanel" hidden>
-      <input type="search" id="searchInput"
-        placeholder="Buscar canciones, artistas...">
     </div>
 
-    <!-- MENÚ DESPLEGABLE -->
-    <div class="drawer-overlay" id="drawerOverlay"></div>
+    <div class="header-actions">
+      <button class="icon-btn" id="searchBtn" aria-label="Buscar">⌕</button>
+      <button class="icon-btn" id="moreBtn" aria-label="Más opciones">⋮</button>
+    </div>
+  </header>
 
-    <aside class="drawer" id="drawer">
-      <div class="drawer-brand">
-        <h2>PULSO</h2>
-        <span>Tu música, tu estilo</span>
+  <!-- BUSCADOR -->
+  <div class="search-panel" id="searchPanel" hidden>
+    <input
+      type="search"
+      id="searchInput"
+      placeholder="Buscar canciones, artistas..."
+      aria-label="Buscar música"
+    >
+  </div>
+
+  <!-- MENÚ LATERAL -->
+  <div class="drawer-overlay" id="drawerOverlay"></div>
+
+  <aside class="drawer" id="drawer">
+    <div class="drawer-brand">
+      <div class="drawer-logo" aria-hidden="true">
+        <span></span><span></span><span></span>
+        <span></span><span></span>
       </div>
+      <h2>PULSO</h2>
+      <span>Reproductor de Música</span>
+      <div class="drawer-wave"></div>
+    </div>
 
-      <nav class="menu">
-        <button class="menu-item active" data-screen="inicio">⌂ <span>Inicio</span></button>
-        <button class="menu-item" data-screen="biblioteca">♫ <span>Biblioteca</span></button>
-        <button class="menu-item" data-screen="albumes">◉ <span>Álbumes</span></button>
-        <button class="menu-item" data-screen="artistas">♬ <span>Artistas</span></button>
-        <button class="menu-item" data-screen="carpetas">▱ <span>Carpetas</span></button>
-        <button class="menu-item" data-screen="favoritos">♡ <span>Favoritos</span></button>
-        <button class="menu-item" data-screen="listas">☷ <span>Listas</span></button>
-        <button class="menu-item" data-screen="ecualizador">≋ <span>Ecualizador</span></button>
-        <button class="menu-item" data-screen="configuracion">⚙ <span>Configuración</span></button>
-      </nav>
+    <nav class="menu" aria-label="Navegación principal">
+      <button class="menu-item active" data-screen="inicio">
+        <span class="menu-icon">⌂</span>
+        <span>Inicio</span>
+      </button>
 
-      <div class="drawer-footer">
-        <span>Desarrollado por</span>
-        <strong>LYQENTRA</strong>
-      </div>
-    </aside>
+      <button class="menu-item" data-screen="biblioteca">
+        <span class="menu-icon">♫</span>
+        <span>Biblioteca</span>
+      </button>
 
-    <!-- CONTENIDO PRINCIPAL -->
-    <main class="main-content">
+      <button class="menu-item" data-screen="albumes">
+        <span class="menu-icon">◎</span>
+        <span>Álbumes</span>
+      </button>
 
-      <section class="player-screen" id="playerScreen">
+      <button class="menu-item" data-screen="artistas">
+        <span class="menu-icon">♬</span>
+        <span>Artistas</span>
+      </button>
 
-        <!-- VINILO Y VISUALIZADOR -->
-        <div class="visual-stage">
+      <button class="menu-item" data-screen="carpetas">
+        <span class="menu-icon">▱</span>
+        <span>Carpetas</span>
+      </button>
 
-          <div class="vinyl" id="vinyl">
-            <div class="vinyl-center"></div>
-          </div>
+      <button class="menu-item" data-screen="favoritos">
+        <span class="menu-icon">♡</span>
+        <span>Favoritos</span>
+      </button>
 
-          <div class="visualizer-circle" id="visualizerCircle">
-            <div class="visualizer-bars" id="visualizerBars"></div>
-            <div class="album-center">
+      <button class="menu-item" data-screen="listas">
+        <span class="menu-icon">☷</span>
+        <span>Listas</span>
+      </button>
+
+      <button class="menu-item" data-screen="ecualizador">
+        <span class="menu-icon">≋</span>
+        <span>Ecualizador</span>
+      </button>
+
+      <button class="menu-item" data-screen="configuracion">
+        <span class="menu-icon">⚙</span>
+        <span>Configuración</span>
+      </button>
+    </nav>
+
+    <div class="drawer-decoration" aria-hidden="true">
+      <div class="wave-line wave-one"></div>
+      <div class="wave-line wave-two"></div>
+    </div>
+
+    <div class="drawer-footer">
+      <span>Desarrollado por</span>
+      <strong>LYQENTRA</strong>
+      <div class="footer-line"></div>
+    </div>
+  </aside>
+
+  <!-- CONTENIDO -->
+  <main class="main-content">
+
+    <section class="player-screen" id="playerScreen">
+
+      <!-- ESCENARIO PRINCIPAL -->
+      <div class="visual-stage">
+
+        <!-- VINILO DECORATIVO -->
+        <div class="vinyl" id="vinyl" aria-hidden="true">
+          <div class="vinyl-center"></div>
+        </div>
+
+        <!-- VISUALIZADOR -->
+        <div class="visualizer-circle" id="visualizerCircle">
+          <div class="visualizer-bars" id="visualizerBars"></div>
+
+          <div class="album-center">
+            <div class="album-placeholder" aria-label="Portada no disponible">
               <span>♫</span>
             </div>
           </div>
-
         </div>
 
-        <!-- INFORMACIÓN DE CANCIÓN -->
-        <div class="song-info">
-          <button class="icon-btn favorite-btn" id="favoriteBtn">♡</button>
-
-          <div class="song-details">
-            <h2 id="songTitle">Selecciona una canción</h2>
-            <p id="songArtist">Tu biblioteca musical</p>
-          </div>
-
-          <button class="icon-btn" id="queueBtn">☷</button>
+        <!-- ONDAS DECORATIVAS -->
+        <div class="stage-waves" aria-hidden="true">
+          <div class="stage-wave stage-wave-one"></div>
+          <div class="stage-wave stage-wave-two"></div>
         </div>
-
-        <!-- PROGRESO -->
-        <div class="progress-section">
-          <input type="range" id="progressBar"
-            min="0" max="100" value="0">
-          <div class="time-info">
-            <span id="currentTime">0:00</span>
-            <span id="duration">0:00</span>
-          </div>
-        </div>
-
-        <!-- CONTROLES -->
-        <div class="player-controls">
-          <button class="control-btn accent" id="repeatBtn">⟳</button>
-          <button class="control-btn" id="previousBtn">◀|</button>
-          <button class="play-btn" id="playBtn">▶</button>
-          <button class="control-btn" id="nextBtn">|▶</button>
-          <button class="control-btn accent" id="shuffleBtn">⤨</button>
-        </div>
-
-        <!-- COLA DE REPRODUCCIÓN -->
-        <section class="queue-panel" id="queuePanel">
-
-          <div class="queue-header">
-            <div>
-              <span class="queue-icon">☷</span>
-              <strong>Siguiente en reproducción</strong>
-            </div>
-            <button id="queueToggle" class="accent">⌃</button>
-          </div>
-
-          <div class="queue-list" id="queueList">
-            <div class="empty-queue">
-              Tu próxima música aparecerá aquí.
-            </div>
-          </div>
-
-        </section>
-
-      </section>
-
-      <!-- PANTALLAS SECUNDARIAS -->
-      <section class="secondary-screen" id="secondaryScreen" hidden>
-        <h2 id="screenTitle">Biblioteca</h2>
-        <div id="screenContent"></div>
-      </section>
-
-    </main>
-
-    <!-- CONFIGURACIÓN DE APARIENCIA -->
-    <div class="settings-modal" id="settingsModal" hidden>
-      <div class="settings-box">
-        <button class="modal-close" id="closeSettings">✕</button>
-        <h2>Apariencia</h2>
-
-        <h3>Visualizador</h3>
-        <div class="visual-options">
-          <button data-visual="circle">Circular</button>
-          <button data-visual="bars">Barras</button>
-          <button data-visual="wave">Olas</button>
-          <button data-visual="mirror">Simétrico</button>
-        </div>
-
-        <h3>Color neón</h3>
-        <div class="color-options" id="colorOptions">
-          <button data-color="green" aria-label="Verde neón"></button>
-          <button data-color="red" aria-label="Rojo neón"></button>
-          <button data-color="blue" aria-label="Azul neón"></button>
-          <button data-color="cyan" aria-label="Celeste neón"></button>
-          <button data-color="purple" aria-label="Morado neón"></button>
-          <button data-color="pink" aria-label="Rosa neón"></button>
-          <button data-color="orange" aria-label="Naranja neón"></button>
-          <button data-color="yellow" aria-label="Amarillo neón"></button>
-        </div>
-
-        <p class="settings-note">
-          El vinilo y el fondo negro permanecerán siempre iguales.
-        </p>
       </div>
-    </div>
 
+      <!-- INFORMACIÓN DE CANCIÓN -->
+      <div class="song-info">
+        <button
+          class="icon-btn favorite-btn"
+          id="favoriteBtn"
+          aria-label="Agregar a favoritos"
+        >♡</button>
+
+        <div class="song-details">
+          <h2 id="songTitle">Selecciona una canción</h2>
+          <p id="songArtist">Tu biblioteca musical</p>
+        </div>
+
+        <button class="icon-btn" id="queueBtn" aria-label="Ver cola">☷</button>
+      </div>
+
+      <!-- BARRA DE PROGRESO -->
+      <div class="progress-section">
+        <input
+          type="range"
+          id="progressBar"
+          min="0"
+          max="100"
+          value="0"
+          aria-label="Progreso de reproducción"
+        >
+
+        <div class="time-info">
+          <span id="currentTime">0:00</span>
+          <span id="duration">0:00</span>
+        </div>
+      </div>
+
+      <!-- CONTROLES -->
+      <div class="player-controls">
+        <button class="control-btn accent" id="repeatBtn" aria-label="Repetir">⟳</button>
+        <button class="control-btn" id="previousBtn" aria-label="Anterior">◀|</button>
+        <button class="play-btn" id="playBtn" aria-label="Reproducir">▶</button>
+        <button class="control-btn" id="nextBtn" aria-label="Siguiente">|▶</button>
+        <button class="control-btn accent" id="shuffleBtn" aria-label="Aleatorio">⤨</button>
+      </div>
+
+      <!-- COLA DE REPRODUCCIÓN -->
+      <section class="queue-panel" id="queuePanel">
+
+        <div class="queue-handle"></div>
+
+        <div class="queue-header">
+          <div>
+            <span class="queue-icon">☷</span>
+            <strong>Siguiente en reproducción</strong>
+          </div>
+
+          <button id="queueToggle" class="accent" aria-label="Mostrar u ocultar cola">⌃</button>
+        </div>
+
+        <div class="queue-list" id="queueList">
+          <div class="empty-queue">
+            Tu próxima música aparecerá aquí.
+          </div>
+        </div>
+
+      </section>
+    </section>
+
+    <!-- PANTALLAS SECUNDARIAS -->
+    <section class="secondary-screen" id="secondaryScreen" hidden>
+      <h2 id="screenTitle">Biblioteca</h2>
+      <div id="screenContent"></div>
+    </section>
+
+  </main>
+
+  <!-- CONFIGURACIÓN -->
+  <div class="settings-modal" id="settingsModal" hidden>
+    <div class="settings-box">
+
+      <button class="modal-close" id="closeSettings" aria-label="Cerrar">✕</button>
+
+      <h2>Apariencia</h2>
+
+      <h3>Visualizador</h3>
+
+      <div class="visual-options">
+        <button data-visual="circle" class="selected">Circular</button>
+        <button data-visual="bars">Barras</button>
+        <button data-visual="wave">Olas</button>
+        <button data-visual="mirror">Simétrico</button>
+      </div>
+
+      <h3>Color neón</h3>
+
+      <div class="color-options" id="colorOptions">
+        <button data-color="green" aria-label="Verde neón" style="--color:#39FF14" class="selected"></button>
+        <button data-color="red" aria-label="Rojo neón" style="--color:#FF1744"></button>
+        <button data-color="blue" aria-label="Azul neón" style="--color:#1677FF"></button>
+        <button data-color="cyan" aria-label="Celeste neón" style="--color:#00D9FF"></button>
+        <button data-color="purple" aria-label="Morado neón" style="--color:#B026FF"></button>
+        <button data-color="pink" aria-label="Rosa neón" style="--color:#FF00A8"></button>
+        <button data-color="orange" aria-label="Naranja neón" style="--color:#FF6D00"></button>
+        <button data-color="yellow" aria-label="Amarillo neón" style="--color:#F5FF00"></button>
+      </div>
+
+      <p class="settings-note">
+        Personaliza el aspecto de PULSO. El vinilo conservará su acabado metálico.
+      </p>
+
+    </div>
   </div>
 
-  <script src="app.js"></script>
+  <footer class="app-footer">
+    Desarrollado por <strong>LYQENTRA</strong>
+  </footer>
 
+</div>
+
+<script src="app.js"></script>
 </body>
 </html>
