@@ -1,7 +1,7 @@
 /* =====================================================
    PULSO — LYQENTRA
    MOTOR DE INTERFAZ PREMIUM
-   IDENTIDAD FIJA VERDE NEÓN
+   Identidad fija verde neón
 ===================================================== */
 
 "use strict";
@@ -56,14 +56,12 @@ let animationId = null;
 function openMenu() {
   drawer.classList.add("open");
   overlay.classList.add("show");
-
   menuBtn.setAttribute("aria-expanded", "true");
 }
 
 function closeMenu() {
   drawer.classList.remove("open");
   overlay.classList.remove("show");
-
   menuBtn.setAttribute("aria-expanded", "false");
 }
 
@@ -363,7 +361,7 @@ queueBtn.addEventListener("click", () => {
 });
 
 /* =====================================================
-   FAVORITOS
+   FAVORITOS — ESTADO VISUAL
 ===================================================== */
 
 favoriteBtn.addEventListener("click", () => {
@@ -382,14 +380,12 @@ favoriteBtn.addEventListener("click", () => {
 });
 
 /* =====================================================
-   CONTROLES VISUALES DE DEMOSTRACIÓN
+   CONTROLES DE DEMOSTRACIÓN
 ===================================================== */
 
 /*
-  IMPORTANTE:
-  Estos controles todavía son de demostración.
-  El motor de reproducción local se implementará
-  en una fase posterior.
+  Estos controles todavía no reproducen archivos.
+  El motor de música local se implementará después.
 */
 
 playBtn.addEventListener("click", () => {
@@ -416,13 +412,15 @@ $("shuffleBtn").addEventListener("click", (event) => {
   event.currentTarget.classList.toggle("selected");
 });
 
-/* Botones anterior y siguiente */
+/* Canción anterior */
 
 $("previousBtn").addEventListener("click", () => {
   console.log(
     "PULSO: canción anterior pendiente del motor musical."
   );
 });
+
+/* Canción siguiente */
 
 $("nextBtn").addEventListener("click", () => {
   console.log(
@@ -437,7 +435,7 @@ $("nextBtn").addEventListener("click", () => {
 progressBar.addEventListener("input", () => {
   /*
     La barra todavía no controla una canción real.
-    Su funcionamiento se conectará al motor de audio.
+    Se conectará al motor de audio posteriormente.
   */
 });
 
