@@ -25,9 +25,7 @@ body {
   overflow-x: hidden;
 }
 
-button, input {
-  font: inherit;
-}
+button, input { font: inherit; }
 
 button {
   cursor: pointer;
@@ -36,9 +34,7 @@ button {
   background: none;
 }
 
-[hidden] {
-  display: none !important;
-}
+[hidden] { display: none !important; }
 
 .app {
   width: 100%;
@@ -107,9 +103,7 @@ button {
   gap: 3px;
 }
 
-.search-panel {
-  padding: 10px 16px;
-}
+.search-panel { padding: 10px 16px; }
 
 .search-panel input {
   width: 100%;
@@ -121,7 +115,7 @@ button {
   outline: none;
 }
 
-/* MENÚ DESPLEGABLE */
+/* MENÚ */
 
 .drawer {
   position: fixed;
@@ -140,9 +134,7 @@ button {
   box-shadow: 15px 0 40px rgba(0,0,0,.5);
 }
 
-.drawer.open {
-  transform: translateX(0);
-}
+.drawer.open { transform: translateX(0); }
 
 .drawer-overlay {
   position: fixed;
@@ -194,14 +186,16 @@ button {
   transition: .2s;
 }
 
-.menu-item span {
-  font-size: 15px;
-}
+.menu-item span { font-size: 15px; }
 
 .menu-item.active,
 .menu-item:active {
   color: white;
-  background: linear-gradient(100deg, #087b27, #073d19);
+  background: linear-gradient(
+    100deg,
+    color-mix(in srgb, var(--neon) 28%, transparent),
+    color-mix(in srgb, var(--neon-secondary) 10%, transparent)
+  );
   box-shadow: inset 3px 0 var(--neon);
 }
 
@@ -227,13 +221,8 @@ button {
 
 /* REPRODUCTOR */
 
-.main-content {
-  padding: 5px 15px 20px;
-}
-
-.player-screen {
-  width: 100%;
-}
+.main-content { padding: 5px 15px 20px; }
+.player-screen { width: 100%; }
 
 .visual-stage {
   height: 345px;
@@ -241,43 +230,100 @@ button {
   display: grid;
   place-items: center;
   isolation: isolate;
+  overflow: visible;
 }
 
-/* VINILO GIRATORIO FIJO */
+/* VINILO 3D EN ESQUINA */
 
 .vinyl {
   position: absolute;
-  width: 270px;
-  height: 270px;
-  top: 15px;
-  left: 50%;
-  transform: translateX(-50%) rotate(0deg);
+  width: 350px;
+  height: 350px;
+
+  /* Esquina superior derecha */
+  top: -105px;
+  right: -165px;
+  left: auto;
+
+  transform: none;
   transform-origin: center center;
-  z-index: -1;
+  rotate: 0deg;
+
+  z-index: 0;
+  border-radius: 50%;
+  overflow: hidden;
+
+  background:
+    radial-gradient(
+      circle at 50% 50%,
+      #050505 0 5%,
+      #242424 5.5% 6%,
+      #080808 6.5% 12%,
+      transparent 12.5%
+    ),
+    repeating-radial-gradient(
+      circle at 50% 50%,
+      #171717 0px,
+      #292929 1px,
+      #080808 2px,
+      #1b1b1b 3px,
+      #090909 5px
+    ),
+    radial-gradient(
+      circle at 35% 28%,
+      #777 0%,
+      #292929 22%,
+      #101010 52%,
+      #020202 100%
+    );
+
+  border: 3px solid #444;
+
+  box-shadow:
+    inset 8px 8px 18px rgba(255,255,255,.12),
+    inset -12px -15px 25px rgba(0,0,0,.95),
+    0 15px 35px rgba(0,0,0,.9),
+    0 0 12px rgba(255,255,255,.08);
+
+  animation: vinylSpin 22s linear infinite;
+  will-change: rotate;
+}
+
+/* Reflejo metálico que gira con el disco */
+.vinyl::before {
+  content: "";
+  position: absolute;
+  inset: 0;
   border-radius: 50%;
 
   background:
-    repeating-radial-gradient(
-      circle,
-      transparent 0px,
-      transparent 3px,
-      rgba(255,255,255,.09) 4px,
-      transparent 5px
-    ),
-    radial-gradient(circle at center,
-      #111 0 12%,
-      #303030 13% 14%,
-      #101010 15% 40%,
-      #383838 41%,
-      #101010 70%,
-      #333 100%
+    conic-gradient(
+      from 15deg,
+      transparent 0deg,
+      rgba(255,255,255,.02) 35deg,
+      rgba(255,255,255,.2) 58deg,
+      transparent 85deg,
+      transparent 155deg,
+      rgba(255,255,255,.12) 190deg,
+      transparent 225deg,
+      transparent 360deg
     );
 
-  border: 2px solid #444;
-  box-shadow: 0 0 25px rgba(0,0,0,.8);
+  opacity: .8;
+  pointer-events: none;
+}
 
-  animation: vinylSpin 12s linear infinite;
-  will-change: transform;
+/* Borde y profundidad del vinilo */
+.vinyl::after {
+  content: "";
+  position: absolute;
+  inset: 9px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,.16);
+  box-shadow:
+    inset 0 0 12px rgba(255,255,255,.08),
+    0 0 5px rgba(255,255,255,.08);
+  pointer-events: none;
 }
 
 .vinyl-center {
@@ -287,19 +333,18 @@ button {
   top: 50%;
   left: 50%;
   transform: translate(-50%,-50%);
-  background: #111;
+  background:
+    radial-gradient(circle at 35% 30%, #999, #292929 45%, #050505 75%);
   border: 2px solid #555;
   border-radius: 50%;
+  box-shadow:
+    inset 0 2px 4px rgba(255,255,255,.3),
+    0 2px 8px rgba(0,0,0,.9);
 }
 
 @keyframes vinylSpin {
-  from {
-    transform: translateX(-50%) rotate(0deg);
-  }
-
-  to {
-    transform: translateX(-50%) rotate(360deg);
-  }
+  from { rotate: 0deg; }
+  to { rotate: 360deg; }
 }
 
 /* VISUALIZADOR CIRCULAR */
@@ -308,12 +353,14 @@ button {
   width: 225px;
   height: 225px;
   position: relative;
+  z-index: 2;
   display: grid;
   place-items: center;
   border: 3px solid var(--neon);
   border-radius: 50%;
-  box-shadow: 0 0 12px var(--neon),
-              inset 0 0 20px rgba(57,255,20,.15);
+  box-shadow:
+    0 0 12px var(--neon),
+    inset 0 0 20px color-mix(in srgb, var(--neon) 15%, transparent);
 }
 
 .album-center {
@@ -323,7 +370,11 @@ button {
   place-items: center;
   border-radius: 50%;
   background:
-    radial-gradient(circle at 50% 45%, rgba(57,255,20,.2), transparent 55%),
+    radial-gradient(
+      circle at 50% 45%,
+      color-mix(in srgb, var(--neon) 20%, transparent),
+      transparent 55%
+    ),
     linear-gradient(145deg,#13251a,#020403);
   overflow: hidden;
 }
@@ -356,13 +407,11 @@ button {
   border-radius: 5px;
   background: var(--neon);
   box-shadow: 0 0 9px var(--neon);
-  transform:
-    rotate(var(--angle))
-    translateY(-125px);
+  transform: rotate(var(--angle)) translateY(-125px);
   transform-origin: center;
 }
 
-/* VISUALIZADOR DE BARRAS */
+/* OTROS VISUALIZADORES */
 
 .visualizer-circle.mode-bars {
   width: 100%;
@@ -407,9 +456,7 @@ button {
 }
 
 .mode-bars .visual-bar,
-.mode-mirror .visual-bar {
-  border-radius: 5px;
-}
+.mode-mirror .visual-bar { border-radius: 5px; }
 
 .mode-wave .visual-bar {
   width: 5px;
@@ -438,9 +485,7 @@ button {
   gap: 8px;
 }
 
-.favorite-btn {
-  color: var(--neon);
-}
+.favorite-btn { color: var(--neon); }
 
 .song-details h2 {
   font-size: 22px;
@@ -457,9 +502,7 @@ button {
 
 /* PROGRESO */
 
-.progress-section {
-  margin-top: 17px;
-}
+.progress-section { margin-top: 17px; }
 
 #progressBar {
   width: 100%;
@@ -490,9 +533,7 @@ button {
   font-size: 25px;
 }
 
-.control-btn.accent {
-  color: var(--neon);
-}
+.control-btn.accent { color: var(--neon); }
 
 .control-btn.selected {
   text-shadow: var(--glow);
@@ -510,11 +551,9 @@ button {
   transition: .2s;
 }
 
-.play-btn:active {
-  transform: scale(.9);
-}
+.play-btn:active { transform: scale(.9); }
 
-/* COLA DE REPRODUCCIÓN */
+/* COLA */
 
 .queue-panel {
   padding: 18px 14px;
@@ -543,9 +582,7 @@ button {
   color: var(--neon);
 }
 
-.accent {
-  color: var(--neon);
-}
+.accent { color: var(--neon); }
 
 .queue-list {
   display: flex;
@@ -572,7 +609,7 @@ button {
   height: 55px;
   flex-shrink: 0;
   border-radius: 9px;
-  background: #1a3024;
+  background: color-mix(in srgb, var(--neon) 12%, #101010);
   display: grid;
   place-items: center;
   color: var(--neon);
@@ -616,9 +653,7 @@ button {
   margin-bottom: 20px;
 }
 
-.secondary-screen p {
-  color: var(--gray);
-}
+.secondary-screen p { color: var(--gray); }
 
 /* CONFIGURACIÓN */
 
@@ -701,9 +736,7 @@ button {
 
 /* ACCESIBILIDAD */
 
-.drawer, .drawer-overlay {
-  touch-action: pan-y;
-}
+.drawer, .drawer-overlay { touch-action: pan-y; }
 
 .menu-item:focus-visible,
 .icon-btn:focus-visible,
@@ -715,9 +748,7 @@ button:focus-visible {
 /* RESPONSIVE */
 
 @media (max-width: 380px) {
-  .visual-stage {
-    height: 310px;
-  }
+  .visual-stage { height: 310px; }
 
   .visualizer-circle {
     width: 205px;
@@ -730,13 +761,13 @@ button:focus-visible {
   }
 
   .vinyl {
-    width: 245px;
-    height: 245px;
+    width: 300px;
+    height: 300px;
+    top: -90px;
+    right: -145px;
   }
 
-  .song-details h2 {
-    font-size: 19px;
-  }
+  .song-details h2 { font-size: 19px; }
 
   .play-btn {
     width: 68px;
@@ -745,11 +776,7 @@ button:focus-visible {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .vinyl {
-    animation-duration: 30s;
-  }
+  .vinyl { animation-duration: 30s; }
 
-  * {
-    transition-duration: .01ms !important;
-  }
+  * { transition-duration: .01ms !important; }
 }
