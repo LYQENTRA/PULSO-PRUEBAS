@@ -24,6 +24,8 @@ const settingsModal = $("settingsModal");
 
 const visualizer = $("visualizerCircle");
 const visualizerBars = $("visualizerBars");
+const visualStage = document.querySelector(".visual-stage");
+const albumArt = $("albumArt");
 
 const queueToggle = $("queueToggle");
 const queueList = $("queueList");
@@ -229,6 +231,20 @@ function selectVisual(type) {
   }
 
   currentVisual = type;
+
+  // Mostrar la carátula desenfocada únicamente en el modo Barras.
+  visualStage.classList.toggle(
+    "cover-background",
+    type === "bars"
+  );
+
+  // Usar la portada visible como fondo del escenario.
+  if (albumArt && albumArt.src) {
+    visualStage.style.setProperty(
+      "--current-cover",
+      `url("${albumArt.src}")`
+    );
+  }
 
   visualizer.classList.remove(
     "mode-bars",
