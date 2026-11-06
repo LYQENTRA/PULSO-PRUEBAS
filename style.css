@@ -1,3 +1,4 @@
+
 :root {
   --neon: #39FF14;
   --neon-secondary: #00E65A;
@@ -242,7 +243,7 @@ button {
   isolation: isolate;
 }
 
-/* VINILO */
+/* VINILO GIRATORIO FIJO */
 
 .vinyl {
   position: absolute;
@@ -250,9 +251,11 @@ button {
   height: 270px;
   top: 15px;
   left: 50%;
-  transform: translateX(-50%);
-  border-radius: 50%;
+  transform: translateX(-50%) rotate(0deg);
+  transform-origin: center center;
   z-index: -1;
+  border-radius: 50%;
+
   background:
     repeating-radial-gradient(
       circle,
@@ -269,9 +272,12 @@ button {
       #101010 70%,
       #333 100%
     );
+
   border: 2px solid #444;
   box-shadow: 0 0 25px rgba(0,0,0,.8);
+
   animation: vinylSpin 12s linear infinite;
+  will-change: transform;
 }
 
 .vinyl-center {
@@ -287,7 +293,13 @@ button {
 }
 
 @keyframes vinylSpin {
-  to { rotate: 360deg; }
+  from {
+    transform: translateX(-50%) rotate(0deg);
+  }
+
+  to {
+    transform: translateX(-50%) rotate(360deg);
+  }
 }
 
 /* VISUALIZADOR CIRCULAR */
@@ -348,6 +360,71 @@ button {
     rotate(var(--angle))
     translateY(-125px);
   transform-origin: center;
+}
+
+/* VISUALIZADOR DE BARRAS */
+
+.visualizer-circle.mode-bars {
+  width: 100%;
+  height: 145px;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  align-self: end;
+  margin-bottom: 10px;
+}
+
+.mode-bars .album-center,
+.mode-wave .album-center,
+.mode-mirror .album-center {
+  display: none;
+}
+
+.mode-bars .visualizer-bars,
+.mode-wave .visualizer-bars,
+.mode-mirror .visualizer-bars {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  border-radius: 0;
+}
+
+.mode-bars .visual-bar,
+.mode-wave .visual-bar,
+.mode-mirror .visual-bar {
+  position: relative;
+  left: auto;
+  top: auto;
+  margin: 0;
+  width: 4px;
+  height: var(--level, 25%);
+  min-height: 5px;
+  transform: none;
+  transition: height .08s linear;
+}
+
+.mode-bars .visual-bar,
+.mode-mirror .visual-bar {
+  border-radius: 5px;
+}
+
+.mode-wave .visual-bar {
+  width: 5px;
+  border-radius: 50%;
+}
+
+.visualizer-circle.mode-wave,
+.visualizer-circle.mode-mirror {
+  border: none;
+  box-shadow: none;
+}
+
+.visualizer-circle.mode-wave .visualizer-bars,
+.visualizer-circle.mode-mirror .visualizer-bars {
+  filter: drop-shadow(0 0 7px var(--neon));
 }
 
 /* INFORMACIÓN DE CANCIÓN */
@@ -414,6 +491,11 @@ button {
 }
 
 .control-btn.accent {
+  color: var(--neon);
+}
+
+.control-btn.selected {
+  text-shadow: var(--glow);
   color: var(--neon);
 }
 
@@ -617,6 +699,19 @@ button {
   line-height: 1.5;
 }
 
+/* ACCESIBILIDAD */
+
+.drawer, .drawer-overlay {
+  touch-action: pan-y;
+}
+
+.menu-item:focus-visible,
+.icon-btn:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--neon);
+  outline-offset: 3px;
+}
+
 /* RESPONSIVE */
 
 @media (max-width: 380px) {
@@ -657,4 +752,4 @@ button {
   * {
     transition-duration: .01ms !important;
   }
-  }
+}
