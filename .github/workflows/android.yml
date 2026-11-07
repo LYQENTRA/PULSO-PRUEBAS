@@ -1,1 +1,54 @@
-.
+name: Build PULSO Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [pulso-android]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Obtener código
+        uses: actions/checkout@v4
+      - name: Configurar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Configurar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Instalar dependencias
+        run: npm install --no-audit --no-fund
+      - name: Preparar archivos web
+        run: npm run build
+      - name: Crear proyecto Android
+        run: npx cap add android
+      - name: Instalar puente nativo de música
+        run: |
+          mkdir -p android/app/src/main/java/com/lyqentra/pulso
+          cp native/android/app/src/main/java/com/lyqentra/pulso/*.java android/app/src/main/java/com/lyqentra/pulso/
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('android/app/src/main/AndroidManifest.xml')
+          s=p.read_text()
+          marker='<manifest'
+          pos=s.find('>')+1
+          perms='\n    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />\n'
+          if 'READ_MEDIA_AUDIO' not in s:
+              s=s[:pos]+perms+s[pos:]
+          p.write_text(s)
+          PY
+      - name: Compilar APK debug
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+      - name: Publicar APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: PULSO-Android-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
