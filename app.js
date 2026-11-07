@@ -965,7 +965,7 @@ function animateVisualizer() {
                 bar.style.top = "50%";
                 bar.style.bottom = "auto";
                 bar.style.transform =
-                    `translate(-50%, -50%) rotate(${angle}deg) translateY(-155px)`;
+                    `translate(-50%, -50%) rotate(${angle}deg) translateY(-132px)`;
                 bar.style.transformOrigin = "center center";
             } else {
                 const positionIndex = isMirror ? pairIndex : index;

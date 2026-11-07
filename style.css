@@ -1485,19 +1485,31 @@ button:disabled {
    Simétrico y menú permanecen intactos.
 ========================================= */
 
-/* Acercar las barras radiales al borde del vinilo. */
+/* Circular: anillo compacto y completo alrededor del vinilo. */
 .visual-stage[data-visual-mode="circular"] .visualizer-circle {
-  width: min(100%, 350px);
-  height: min(100%, 350px);
-  transform: translateY(26px);
+  width: min(100%, 330px);
+  height: min(100%, 330px);
+  transform: translateY(10px);
+  z-index: 1;
 }
 
 .visual-stage[data-visual-mode="circular"] .visualizer-bars {
   inset: 0;
+  overflow: visible;
 }
 
-/* El radio real de las barras se controla en app.js:
-   translateY(-155px), en lugar de -210px. */
+/* El anillo queda parcialmente detrás del disco, sin taparlo. */
+.visual-stage[data-visual-mode="circular"] .vinyl {
+  top: calc(50% + 10px);
+  width: clamp(230px, 62vw, 260px);
+  z-index: 2;
+}
+
+.visual-stage[data-visual-mode="circular"] .album-center {
+  z-index: 4;
+}
+
+/* Radio radial: 132 px para que el anillo no se recorte abajo. */
 
 /* Bajar Barras y Olas hacia la zona del título.
    El modo Simétrico queda expresamente sin cambios. */
