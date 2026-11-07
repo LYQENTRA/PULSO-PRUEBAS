@@ -79,6 +79,30 @@ const audioSupported = Boolean(
     musicFileInput
 );
 
+const PULSO_STORAGE_KEY = "pulso_local_state_v1";
+let restoredPulsoState = {};
+try { restoredPulsoState = JSON.parse(localStorage.getItem(PULSO_STORAGE_KEY) || "{}"); } catch (_) { restoredPulsoState = {}; }
+
+function savePulsoState() {
+    try {
+        const nativeTracks = musicLibrary.filter(t => t.native);
+        localStorage.setItem(PULSO_STORAGE_KEY, JSON.stringify({
+            favorites: nativeTracks.filter(t => t.favorite).map(t => t.url),
+            queue: playbackQueue.map(i => musicLibrary[i]?.url).filter(Boolean),
+            current: musicLibrary[currentTrackIndex]?.url || "",
+            shuffle: isShuffle,
+            repeat: repeatMode,
+            savedAt: Date.now()
+        }));
+    } catch (error) { console.warn("No se pudo guardar el estado local de PULSO", error); }
+}
+
+function restorePulsoState() {
+    isShuffle = !!restoredPulsoState.shuffle;
+    repeatMode = Number.isInteger(restoredPulsoState.repeat) ? restoredPulsoState.repeat : 0;
+}
+
+
 /* =========================================
    UTILIDADES
 ========================================= */
@@ -239,6 +263,7 @@ function addMusicFiles(files) {
 
     updateLibraryCount();
     renderQueuePanel();
+    savePulsoState();
 
     if (added > 0) {
         showMessage(
@@ -311,6 +336,7 @@ function loadTrack(index, autoplay = false) {
     updatePlayButton();
     renderQueuePanel();
 
+    savePulsoState();
     if (autoplay) {
         playCurrentTrack();
     }
@@ -337,6 +363,7 @@ async function playCurrentTrack() {
     try {
         if (isNativeAndroid && musicLibrary[currentTrackIndex]?.native) {
             const track = musicLibrary[currentTrackIndex];
+            try { await PulsoNative.requestNotificationPermission(); } catch (_) {}
             await PulsoNative.playInBackground({ uri: track.url, title: track.name, artist: track.artist });
             isPlaying = true; updatePlayButton(); updateVinylRotation(); startNativeStatePolling(); return;
         }
@@ -718,6 +745,7 @@ function addToQueue(index) {
     }
 
     playbackQueue.push(index);
+    savePulsoState();
     renderQueue();
     renderQueuePanel();
     if (currentScreen === "biblioteca") renderLibrary();
@@ -734,6 +762,7 @@ function removeFromQueue(index) {
     }
 
     playbackQueue.splice(position, 1);
+    savePulsoState();
     renderQueue();
     renderQueuePanel();
     if (currentScreen === "biblioteca") renderLibrary();
@@ -750,6 +779,7 @@ function moveQueueItem(position, direction) {
 
     [playbackQueue[position], playbackQueue[target]] =
         [playbackQueue[target], playbackQueue[position]];
+    savePulsoState();
 
     renderQueue();
     renderQueuePanel();
@@ -1257,6 +1287,7 @@ function toggleFavorite() {
     const track = musicLibrary[currentTrackIndex];
 
     track.favorite = !track.favorite;
+    savePulsoState();
 
     const favoriteBtn = $("favoriteBtn");
 
@@ -1278,6 +1309,7 @@ function toggleFavorite() {
 
 function toggleShuffle() {
     isShuffle = !isShuffle;
+    savePulsoState();
 
     const button = $("shuffleBtn");
 
@@ -1294,6 +1326,7 @@ function toggleShuffle() {
 
 function toggleRepeat() {
     repeatMode = (repeatMode + 1) % 3;
+    savePulsoState();
 
     const button = $("repeatBtn");
 
@@ -1378,15 +1411,23 @@ if (musicFileInput) {
 async function scanNativeLibrary() {
     if (!isNativeAndroid) { showMessage("El escaneo completo requiere la aplicación Android instalada."); return; }
     try {
-        showMessage("Solicitando acceso a tu música...");
         const permission = await PulsoNative.requestAudioPermission();
         if (!permission.granted) { showMessage("Necesitamos permiso para leer tu música."); return; }
+        try { await PulsoNative.requestNotificationPermission(); } catch (_) {}
         const result = await PulsoNative.scanAudio();
+        const oldByUri = new Map(musicLibrary.filter(t=>t.native).map(t=>[t.url,t]));
+        const savedFavorites = new Set(restoredPulsoState.favorites || []);
         musicLibrary.forEach(t=>{if(t.url && t.url.startsWith("blob:"))URL.revokeObjectURL(t.url);});
-        musicLibrary = (result.tracks || []).map(t=>({ id:t.id, name:t.title || "Canción desconocida", artist:t.artist && t.artist !== "<unknown>" ? t.artist : "Artista desconocido", album:t.album && t.album !== "<unknown>" ? t.album : "Álbum desconocido", folder:t.folder || "Almacenamiento interno", duration:(Number(t.duration)||0)/1000, url:t.uri, native:true, favorite:false }));
-        playbackQueue = musicLibrary.map((_,i)=>i); currentTrackIndex = -1;
-        updateLibraryCount(); renderLibrary(); renderQueuePanel();
-        showMessage(`${musicLibrary.length} canciones encontradas.`);
+        musicLibrary = (result.tracks || []).map(t=>{
+            const uri=t.uri, old=oldByUri.get(uri);
+            return { id:t.id, name:t.title || "Canción desconocida", artist:t.artist && t.artist !== "<unknown>" ? t.artist : "Artista desconocido", album:t.album && t.album !== "<unknown>" ? t.album : "Álbum desconocido", folder:t.folder || "Almacenamiento interno", duration:(Number(t.duration)||0)/1000, url:uri, native:true, favorite:!!(old?.favorite || savedFavorites.has(uri)) };
+        });
+        const savedQueue = restoredPulsoState.queue || [];
+        playbackQueue = savedQueue.length ? savedQueue.map(uri=>musicLibrary.findIndex(t=>t.url===uri)).filter(i=>i>=0) : musicLibrary.map((_,i)=>i);
+        if (!playbackQueue.length) playbackQueue = musicLibrary.map((_,i)=>i);
+        currentTrackIndex = restoredPulsoState.current ? musicLibrary.findIndex(t=>t.url===restoredPulsoState.current) : -1;
+        updateLibraryCount(); renderLibrary(); renderQueuePanel(); savePulsoState();
+        showMessage(`${musicLibrary.length} canciones encontradas y biblioteca sincronizada.`);
     } catch(error) { console.error(error); showMessage("No se pudo escanear la música. Revisa los permisos."); }
 }
 if (scanMusicBtn) scanMusicBtn.addEventListener("click", scanNativeLibrary);
@@ -1615,6 +1656,7 @@ if (queueToggle) queueToggle.addEventListener("click", () => {
 ========================================= */
 
 function initializePulso() {
+    restorePulsoState();
     navigate("inicio");
 
     updateLibraryCount();
@@ -1633,6 +1675,12 @@ function initializePulso() {
     }
 
     console.log("PULSO iniciado correctamente.");
+    if (isNativeAndroid) {
+        startNativeStatePolling();
+        PulsoNative.hasAudioPermission().then(result => {
+            if (result?.granted) scanNativeLibrary();
+        }).catch(() => {});
+    }
 }
 
 initializePulso();
