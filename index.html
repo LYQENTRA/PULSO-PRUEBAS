@@ -32,7 +32,9 @@
 </header>
 
 <div class="search-panel" id="searchPanel" hidden>
-  <input type="search" id="searchInput" placeholder="Buscar canciones, artistas..." aria-label="Buscar música">
+  <input type="search" id="searchInput"
+    placeholder="Buscar canciones, artistas..."
+    aria-label="Buscar música">
 </div>
 
 <div class="drawer-overlay" id="drawerOverlay"></div>
@@ -46,41 +48,52 @@
   </div>
 
   <nav class="menu" aria-label="Navegación principal">
+
     <button class="menu-item active" data-screen="inicio">
-      <span class="menu-icon">⌂</span><span>Inicio</span>
+      <span class="menu-icon">⌂</span>
+      <span>Inicio</span>
     </button>
 
     <button class="menu-item" data-screen="biblioteca">
-      <span class="menu-icon">♫</span><span>Biblioteca</span>
+      <span class="menu-icon">♫</span>
+      <span>Biblioteca</span>
     </button>
 
     <button class="menu-item" data-screen="albumes">
-      <span class="menu-icon">◎</span><span>Álbumes</span>
+      <span class="menu-icon">◎</span>
+      <span>Álbumes</span>
     </button>
 
     <button class="menu-item" data-screen="artistas">
-      <span class="menu-icon">♬</span><span>Artistas</span>
+      <span class="menu-icon">♬</span>
+      <span>Artistas</span>
     </button>
 
     <button class="menu-item" data-screen="carpetas">
-      <span class="menu-icon">▱</span><span>Carpetas</span>
+      <span class="menu-icon">▱</span>
+      <span>Carpetas</span>
     </button>
 
     <button class="menu-item" data-screen="favoritos">
-      <span class="menu-icon">♡</span><span>Favoritos</span>
+      <span class="menu-icon">♡</span>
+      <span>Favoritos</span>
     </button>
 
     <button class="menu-item" data-screen="listas">
-      <span class="menu-icon">☷</span><span>Listas</span>
+      <span class="menu-icon">☷</span>
+      <span>Listas</span>
     </button>
 
     <button class="menu-item" data-screen="ecualizador">
-      <span class="menu-icon">≋</span><span>Ecualizador</span>
+      <span class="menu-icon">≋</span>
+      <span>Ecualizador</span>
     </button>
 
     <button class="menu-item" data-screen="configuracion">
-      <span class="menu-icon">⚙</span><span>Configuración</span>
+      <span class="menu-icon">⚙</span>
+      <span>Configuración</span>
     </button>
+
   </nav>
 
   <div class="drawer-decoration" aria-hidden="true">
@@ -97,6 +110,8 @@
 
 <main class="main-content">
 
+  <!-- PANTALLA PRINCIPAL DEL REPRODUCTOR -->
+
   <section class="player-screen" id="playerScreen">
 
     <div class="visual-stage">
@@ -106,16 +121,17 @@
       </div>
 
       <div class="visualizer-circle" id="visualizerCircle">
+
         <div class="visualizer-bars" id="visualizerBars"></div>
 
         <div class="album-center">
           <img
             src="assets/portada-aurora.webp"
-            alt="Portada musical de demostración"
+            alt="Portada musical"
             class="album-art"
-            id="albumArt"
-          >
+            id="albumArt">
         </div>
+
       </div>
 
       <div class="stage-waves" aria-hidden="true">
@@ -125,7 +141,10 @@
     </div>
 
     <div class="song-info">
-      <button class="icon-btn favorite-btn" id="favoriteBtn" aria-label="Agregar a favoritos">
+
+      <button class="icon-btn favorite-btn"
+        id="favoriteBtn"
+        aria-label="Agregar a favoritos">
         ♡
       </button>
 
@@ -134,16 +153,26 @@
         <p id="songArtist">Tu biblioteca musical</p>
       </div>
 
-      <button class="icon-btn" id="queueBtn" aria-label="Ver cola">☷</button>
+      <button class="icon-btn" id="queueBtn" aria-label="Ver cola">
+        ☷
+      </button>
+
     </div>
 
     <div class="progress-section">
-      <input type="range" id="progressBar" min="0" max="100" value="0" aria-label="Progreso de reproducción">
+
+      <input type="range"
+        id="progressBar"
+        min="0"
+        max="100"
+        value="0"
+        aria-label="Progreso de reproducción">
 
       <div class="time-info">
         <span id="currentTime">0:00</span>
         <span id="duration">0:00</span>
       </div>
+
     </div>
 
     <div class="player-controls">
@@ -155,6 +184,7 @@
     </div>
 
     <section class="queue-panel" id="queuePanel">
+
       <div class="queue-handle"></div>
 
       <div class="queue-header">
@@ -163,7 +193,10 @@
           <strong>Siguiente en reproducción</strong>
         </div>
 
-        <button id="queueToggle" class="accent" aria-label="Mostrar u ocultar cola" aria-expanded="true">
+        <button id="queueToggle"
+          class="accent"
+          aria-label="Mostrar u ocultar cola"
+          aria-expanded="true">
           ⌃
         </button>
       </div>
@@ -171,21 +204,84 @@
       <div class="queue-list" id="queueList">
         <div class="empty-queue">Tu próxima música aparecerá aquí.</div>
       </div>
+
     </section>
 
   </section>
 
-  <section class="secondary-screen" id="secondaryScreen" hidden>
-    <h2 id="screenTitle">Biblioteca</h2>
-    <div id="screenContent"></div>
+  <!-- PANTALLA INDEPENDIENTE DE BIBLIOTECA -->
+
+  <section class="secondary-screen library-screen"
+    id="secondaryScreen"
+    hidden>
+
+    <div class="library-heading">
+      <div>
+        <span class="library-eyebrow">TU MÚSICA</span>
+        <h2 id="screenTitle">Biblioteca</h2>
+        <p id="librarySubtitle">Tu colección musical en un solo lugar.</p>
+      </div>
+
+      <div class="library-count" id="libraryCount">
+        0 canciones
+      </div>
+    </div>
+
+    <div class="library-actions">
+
+      <button class="library-add-btn" id="addMusicBtn">
+        <span>＋</span>
+        <span>Agregar música</span>
+      </button>
+
+      <button class="library-scan-btn" id="scanMusicBtn">
+        <span>⟳</span>
+        <span>Actualizar biblioteca</span>
+      </button>
+
+    </div>
+
+    <div class="library-tabs" id="libraryTabs">
+      <button class="library-tab active" data-library-tab="canciones">
+        Canciones
+      </button>
+
+      <button class="library-tab" data-library-tab="albumes">
+        Álbumes
+      </button>
+
+      <button class="library-tab" data-library-tab="artistas">
+        Artistas
+      </button>
+    </div>
+
+    <div class="library-content" id="screenContent">
+
+      <div class="library-empty">
+        <div class="library-empty-icon">♫</div>
+        <h3>Tu biblioteca está esperando</h3>
+        <p>Agrega música para comenzar a escucharla en PULSO.</p>
+      </div>
+
+    </div>
+
+    <button class="library-back-btn" id="libraryBackBtn">
+      ← Volver al reproductor
+    </button>
+
   </section>
 
 </main>
 
+<!-- CONFIGURACIÓN -->
+
 <div class="settings-modal" id="settingsModal" hidden>
+
   <div class="settings-box">
 
-    <button class="modal-close" id="closeSettings" aria-label="Cerrar">✕</button>
+    <button class="modal-close" id="closeSettings" aria-label="Cerrar">
+      ✕
+    </button>
 
     <h2>Apariencia</h2>
     <h3>Visualizador</h3>
@@ -202,6 +298,7 @@
     </p>
 
   </div>
+
 </div>
 
 <footer class="app-footer">
@@ -209,6 +306,7 @@
 </footer>
 
 <!-- SELECCIÓN DE ARCHIVOS MUSICALES -->
+
 <input
   type="file"
   id="musicFileInput"
@@ -217,7 +315,8 @@
   hidden
 >
 
-<!-- MOTOR DE AUDIO -->
+<!-- REPRODUCTOR DE AUDIO -->
+
 <audio id="audioPlayer" preload="metadata"></audio>
 
 </div>
