@@ -89,11 +89,12 @@ function savePulsoState() {
     try {
         const nativeTracks = musicLibrary.filter(t => t.native);
         localStorage.setItem(PULSO_STORAGE_KEY, JSON.stringify({
-            favorites: nativeTracks.filter(t => t.favorite).map(t => t.url),
+            favorites: musicLibrary.filter(t => t.favorite).map(t => t.url).filter(Boolean),
             queue: playbackQueue.map(i => musicLibrary[i]?.url).filter(Boolean),
             current: musicLibrary[currentTrackIndex]?.url || "",
             shuffle: isShuffle,
             repeat: repeatMode,
+            visualMode: document.querySelector(".visual-stage")?.dataset.visualMode || "circular",
             savedAt: Date.now()
         }));
     } catch (error) { console.warn("No se pudo guardar el estado local de PULSO", error); }
@@ -1430,6 +1431,13 @@ async function scanNativeLibrary() {
         playbackQueue = savedQueue.length ? savedQueue.map(uri=>musicLibrary.findIndex(t=>t.url===uri)).filter(i=>i>=0) : musicLibrary.map((_,i)=>i);
         if (!playbackQueue.length) playbackQueue = musicLibrary.map((_,i)=>i);
         currentTrackIndex = restoredPulsoState.current ? musicLibrary.findIndex(t=>t.url===restoredPulsoState.current) : -1;
+        if (currentTrackIndex >= 0) {
+            const restoredTrack = musicLibrary[currentTrackIndex];
+            if (songTitle) songTitle.textContent = restoredTrack.name;
+            if (songArtist) songArtist.textContent = restoredTrack.artist;
+            if (totalTime) totalTime.textContent = formatTime(restoredTrack.duration);
+            if (currentTime) currentTime.textContent = "0:00";
+        }
         updateLibraryCount(); renderLibrary(); renderQueuePanel(); savePulsoState();
         showMessage(`${musicLibrary.length} canciones encontradas y biblioteca sincronizada.`);
     } catch(error) { console.error(error); showMessage("No se pudo escanear la música. Revisa los permisos."); }
@@ -1671,7 +1679,8 @@ function initializePulso() {
     updateVinylRotation();
 
     createVisualizerBars();
-    setVisualizerMode("circular");
+    const allowedModes = ["circular", "bars", "wave", "mirror"];
+    setVisualizerMode(allowedModes.includes(restoredPulsoState.visualMode) ? restoredPulsoState.visualMode : "circular");
 
     const visualizer = $("visualizerCircle");
 
