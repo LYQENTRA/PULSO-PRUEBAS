@@ -22,7 +22,8 @@ import com.getcapacitor.annotation.PermissionCallback;
 
 @CapacitorPlugin(name = "PulsoMedia", permissions = {
     @Permission(alias = "audio", strings = { Manifest.permission.READ_MEDIA_AUDIO }),
-    @Permission(alias = "legacyAudio", strings = { Manifest.permission.READ_EXTERNAL_STORAGE })
+    @Permission(alias = "legacyAudio", strings = { Manifest.permission.READ_EXTERNAL_STORAGE }),
+    @Permission(alias = "notifications", strings = { Manifest.permission.POST_NOTIFICATIONS })
 })
 public class PulsoMediaPlugin extends Plugin {
     private BroadcastReceiver mediaReceiver;
@@ -36,6 +37,33 @@ public class PulsoMediaPlugin extends Plugin {
         }};
         IntentFilter f = new IntentFilter(); f.addAction("com.lyqentra.pulso.NATIVE_NEXT"); f.addAction("com.lyqentra.pulso.NATIVE_PREVIOUS"); f.addAction("com.lyqentra.pulso.NATIVE_ENDED");
         if (Build.VERSION.SDK_INT >= 33) getContext().registerReceiver(mediaReceiver, f, android.content.Context.RECEIVER_NOT_EXPORTED); else getContext().registerReceiver(mediaReceiver, f);
+    }
+
+    @PluginMethod
+    public void requestNotificationPermission(PluginCall call) {
+        if (Build.VERSION.SDK_INT < 33) {
+            JSObject result = new JSObject(); result.put("granted", true); call.resolve(result); return;
+        }
+        if (getPermissionState("notifications") == PermissionState.GRANTED) {
+            JSObject result = new JSObject(); result.put("granted", true); call.resolve(result);
+        } else {
+            requestPermissionForAlias("notifications", call, "notificationPermissionResult");
+        }
+    }
+
+    @PermissionCallback
+    private void notificationPermissionResult(PluginCall call) {
+        JSObject result = new JSObject();
+        result.put("granted", getPermissionState("notifications") == PermissionState.GRANTED);
+        call.resolve(result);
+    }
+
+    @PluginMethod
+    public void hasAudioPermission(PluginCall call) {
+        String alias = Build.VERSION.SDK_INT >= 33 ? "audio" : "legacyAudio";
+        JSObject result = new JSObject();
+        result.put("granted", getPermissionState(alias) == PermissionState.GRANTED);
+        call.resolve(result);
     }
 
     @PluginMethod
