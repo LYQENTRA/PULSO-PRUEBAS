@@ -1440,3 +1440,40 @@ button:disabled {
   opacity: .48;
   filter: drop-shadow(0 0 6px rgba(57,255,20,.22));
 }
+
+/* =========================================
+   PULSO — AJUSTE DE POSICIÓN Y FRECUENCIAS
+   Noviembre 2026
+========================================= */
+
+/* Acerca Barras y Olas a la información de la canción sin tocar Simétrico. */
+.visual-stage[data-visual-mode="bars"] .visualizer-circle,
+.visual-stage[data-visual-mode="wave"] .visualizer-circle {
+  transform: translateY(54px);
+}
+
+/* Circular: composición completa, más compacta y ligeramente más baja. */
+.visual-stage[data-visual-mode="circular"] .visualizer-circle {
+  width: min(100%, 350px);
+  height: min(100%, 350px);
+  transform: translateY(26px);
+}
+
+.visual-stage[data-visual-mode="circular"] .vinyl {
+  top: calc(50% + 26px);
+  width: clamp(215px, 58vw, 245px);
+}
+
+.visual-stage[data-visual-mode="circular"] .visualizer-bars {
+  inset: 0;
+}
+
+.visual-stage[data-visual-mode="circular"] .visual-bar {
+  width: 5px;
+}
+
+/* Mantener el modo Simétrico exactamente como quedó aprobado. */
+.visual-stage[data-visual-mode="mirror"] .visualizer-circle {
+  transform: none;
+}
+

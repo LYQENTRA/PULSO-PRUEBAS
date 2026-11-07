@@ -893,7 +893,10 @@ function createVisualizerBars() {
     if (!barContainer) return;
 
     barContainer.replaceChildren();
-    const total = 48;
+    const stage = document.querySelector(".visual-stage");
+    const mode = stage?.dataset.visualMode || "circular";
+    // Barras y Olas usan menos columnas para evitar una cola de frecuencias casi inmóviles.
+    const total = (mode === "bars" || mode === "wave") ? 36 : 48;
 
     for (let i = 0; i < total; i++) {
         const bar = document.createElement("div");
@@ -931,11 +934,24 @@ function animateVisualizer() {
 
             let level = 0;
             if (analyser && frequencyData && isPlaying) {
-                const frequencyIndex = Math.min(
-                    frequencyData.length - 1,
-                    Math.floor(samplePosition * frequencyData.length)
+                // Repartimos las barras entre las frecuencias que contienen energía musical útil.
+                // Evita asignar las últimas columnas a agudos casi siempre silenciosos.
+                const usableBins = Math.max(8, Math.floor(frequencyData.length * 0.62));
+                const curvedPosition = Math.pow(samplePosition, 1.18);
+                const centerBin = Math.min(
+                    usableBins - 1,
+                    Math.floor(curvedPosition * (usableBins - 1))
                 );
-                level = (frequencyData[frequencyIndex] || 0) / 255;
+                const firstBin = Math.max(0, centerBin - 1);
+                const lastBin = Math.min(usableBins - 1, centerBin + 1);
+                let totalEnergy = 0;
+                let samples = 0;
+                for (let bin = firstBin; bin <= lastBin; bin++) {
+                    totalEnergy += frequencyData[bin] || 0;
+                    samples++;
+                }
+                const rawLevel = samples ? totalEnergy / samples / 255 : 0;
+                level = Math.pow(rawLevel, 0.78);
             }
 
             const base = mode === "circular" ? 9 : 18;
