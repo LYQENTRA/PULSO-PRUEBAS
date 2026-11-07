@@ -59,7 +59,8 @@ jobs:
               'android.permission.READ_EXTERNAL_STORAGE',
               'android.permission.FOREGROUND_SERVICE',
               'android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK',
-              'android.permission.POST_NOTIFICATIONS'
+              'android.permission.POST_NOTIFICATIONS',
+              'android.permission.RECORD_AUDIO'
           ]
           additions = []
           if permissions[0] not in text:
