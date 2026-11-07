@@ -246,9 +246,8 @@ function addMusicFiles(files) {
         showMessage("Esos archivos ya están en la biblioteca.");
     }
 
-    if (currentScreen === "biblioteca") {
-        renderLibrary();
-    }
+    if (currentScreen === "biblioteca") renderLibrary();
+    if (currentScreen === "cola" || currentScreen === "listas") renderQueue();
 }
 
 /* =========================================
@@ -278,6 +277,7 @@ function loadTrack(index, autoplay = false) {
         return;
     }
 
+    if (!playbackQueue.includes(index)) playbackQueue.unshift(index);
     currentTrackIndex = index;
 
     const track = musicLibrary[index];
@@ -370,47 +370,58 @@ function updatePlayButton() {
 ========================================= */
 
 function playNextTrack() {
-    if (!musicLibrary.length) return;
+    if (!musicLibrary.length || !audioPlayer) return;
 
+    const currentPosition = playbackQueue.indexOf(currentTrackIndex);
     let nextIndex = -1;
-    if (isShuffle && musicLibrary.length > 1) {
-        const candidates = musicLibrary.map((_, i) => i).filter(i => i !== currentTrackIndex);
-        nextIndex = candidates[Math.floor(Math.random() * candidates.length)];
-    } else {
-        const position = playbackQueue.indexOf(currentTrackIndex);
-        if (position >= 0 && position < playbackQueue.length - 1) {
-            nextIndex = playbackQueue[position + 1];
-        } else if (repeatMode === 1 && playbackQueue.length) {
-            nextIndex = playbackQueue[0];
+
+    if (isShuffle) {
+        const candidates = playbackQueue.filter(index => index !== currentTrackIndex);
+        if (candidates.length) {
+            nextIndex = candidates[Math.floor(Math.random() * candidates.length)];
         }
+    } else if (currentPosition >= 0 && currentPosition < playbackQueue.length - 1) {
+        nextIndex = playbackQueue[currentPosition + 1];
+    } else if (currentPosition < 0 && playbackQueue.length) {
+        nextIndex = playbackQueue[0];
+    } else if (repeatMode === 1 && playbackQueue.length) {
+        nextIndex = playbackQueue[0];
     }
 
-    if (nextIndex < 0) {
+    if (nextIndex < 0 || !musicLibrary[nextIndex]) {
         audioPlayer.pause();
-        showMessage("No hay más canciones en la cola.");
+        showMessage("La cola terminó. Agrega más canciones para continuar.");
         return;
     }
+
     if (currentTrackIndex >= 0) playbackHistory.push(currentTrackIndex);
     loadTrack(nextIndex, true);
+    renderQueue();
     renderQueuePanel();
 }
 
 function playPreviousTrack() {
     if (!audioPlayer || currentTrackIndex < 0) return;
+
     if (audioPlayer.currentTime > 3) {
         audioPlayer.currentTime = 0;
         return;
     }
+
     let previousIndex = playbackHistory.length ? playbackHistory.pop() : -1;
+
     if (previousIndex < 0) {
         const position = playbackQueue.indexOf(currentTrackIndex);
         if (position > 0) previousIndex = playbackQueue[position - 1];
     }
-    if (previousIndex < 0) {
+
+    if (previousIndex < 0 || !musicLibrary[previousIndex]) {
         showMessage("No hay una canción anterior.");
         return;
     }
+
     loadTrack(previousIndex, true);
+    renderQueue();
     renderQueuePanel();
 }
 
@@ -424,9 +435,7 @@ function playPreviousTrack() {
 ========================================= */
 
 function renderLibrary() {
-    if (!screenContent) {
-        return;
-    }
+    if (!screenContent) return;
 
     updateLibraryCount();
 
@@ -437,14 +446,13 @@ function renderLibrary() {
 
     screenContent.innerHTML = "";
 
-    if (musicLibrary.length === 0) {
+    if (!musicLibrary.length) {
         screenContent.innerHTML = `
             <div class="library-empty">
                 <div class="library-empty-icon">♫</div>
                 <h3>Tu biblioteca está vacía</h3>
                 <p>Agrega canciones desde tu dispositivo para comenzar a escuchar música en PULSO.</p>
-            </div>
-        `;
+            </div>`;
         return;
     }
 
@@ -452,13 +460,18 @@ function renderLibrary() {
     list.className = "library-list";
 
     musicLibrary.forEach((track, index) => {
-        const item = document.createElement("button");
-        item.type = "button";
+        const item = document.createElement("div");
         item.className = "library-track";
+
+        const play = document.createElement("button");
+        play.type = "button";
+        play.className = "library-track-play";
+        play.setAttribute("aria-label", `Reproducir ${track.name}`);
 
         const cover = document.createElement("span");
         cover.className = "library-track-cover";
-        cover.textContent = "♫";
+        cover.textContent = currentTrackIndex === index && isPlaying ? "Ⅱ" : "♫";
+        play.appendChild(cover);
 
         const info = document.createElement("span");
         info.className = "library-track-info";
@@ -477,13 +490,29 @@ function renderLibrary() {
         duration.className = "library-track-duration";
         duration.textContent = formatTime(track.duration);
 
-        item.append(cover, info, duration);
+        const add = document.createElement("button");
+        add.type = "button";
+        add.className = "queue-add-btn";
+        add.textContent = playbackQueue.includes(index) ? "✓" : "＋";
+        add.title = playbackQueue.includes(index) ? "Ya está en la cola" : "Agregar a la cola";
+        add.disabled = playbackQueue.includes(index);
+        add.setAttribute("aria-label", add.title);
 
-        item.addEventListener("click", () => {
+        play.appendChild(info);
+        play.appendChild(duration);
+
+        play.addEventListener("click", () => {
+            if (!playbackQueue.includes(index)) playbackQueue.push(index);
             navigate("inicio");
             loadTrack(index, true);
+            renderQueuePanel();
         });
 
+        add.addEventListener("click", () => {
+            addToQueue(index);
+        });
+
+        item.append(play, add);
         list.appendChild(item);
     });
 
@@ -550,61 +579,167 @@ function selectLibraryTab(tab) {
    COLA DE REPRODUCCIÓN
 ========================================= */
 
+function createQueueItem(index, position, total, compact = false) {
+    const track = musicLibrary[index];
+    if (!track) return null;
+
+    const row = document.createElement("div");
+    row.className = "queue-item";
+
+    const play = document.createElement("button");
+    play.type = "button";
+    play.className = "queue-track";
+    play.textContent = track.name;
+    play.addEventListener("click", () => {
+        loadTrack(index, true);
+        renderQueue();
+        renderQueuePanel();
+    });
+
+    const actions = document.createElement("div");
+    actions.className = "queue-item-actions";
+
+    const up = document.createElement("button");
+    up.type = "button";
+    up.className = "queue-action-btn";
+    up.textContent = "↑";
+    up.title = "Mover arriba";
+    up.disabled = position <= 0;
+    up.addEventListener("click", () => moveQueueItem(position, -1));
+
+    const down = document.createElement("button");
+    down.type = "button";
+    down.className = "queue-action-btn";
+    down.textContent = "↓";
+    down.title = "Mover abajo";
+    down.disabled = position >= total - 1;
+    down.addEventListener("click", () => moveQueueItem(position, 1));
+
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "queue-action-btn remove";
+    remove.textContent = "×";
+    remove.title = "Quitar de la cola";
+    remove.addEventListener("click", () => removeFromQueue(index));
+
+    actions.append(up, down, remove);
+    row.append(play, actions);
+    return row;
+}
+
+function getUpcomingQueueEntries() {
+    const currentPosition = playbackQueue.indexOf(currentTrackIndex);
+    const start = currentPosition >= 0 ? currentPosition + 1 : 0;
+    return playbackQueue
+        .map((trackIndex, queuePosition) => ({ trackIndex, queuePosition }))
+        .slice(start)
+        .filter(item => Boolean(musicLibrary[item.trackIndex]));
+}
+
 function renderQueue() {
-    if (!screenContent) {
-        return;
-    }
+    if (!screenContent) return;
 
     screenContent.innerHTML = "";
 
-    if (musicLibrary.length === 0) {
+    const current = document.createElement("section");
+    current.className = "queue-current-section";
+
+    const currentHeading = document.createElement("h3");
+    currentHeading.textContent = "Reproduciendo ahora";
+    current.appendChild(currentHeading);
+
+    if (currentTrackIndex >= 0 && musicLibrary[currentTrackIndex]) {
+        const currentTrack = document.createElement("div");
+        currentTrack.className = "queue-current-track";
+        currentTrack.textContent = `▶  ${musicLibrary[currentTrackIndex].name}`;
+        current.appendChild(currentTrack);
+    } else {
+        const emptyCurrent = document.createElement("p");
+        emptyCurrent.className = "queue-screen-empty";
+        emptyCurrent.textContent = "Todavía no hay una canción reproduciéndose.";
+        current.appendChild(emptyCurrent);
+    }
+
+    const heading = document.createElement("h3");
+    heading.className = "queue-upcoming-heading";
+    const upcoming = getUpcomingQueueEntries();
+    heading.textContent = `A continuación (${upcoming.length})`;
+
+    const list = document.createElement("div");
+    list.className = "queue-screen-list";
+
+    if (!upcoming.length) {
         const empty = document.createElement("div");
         empty.className = "library-empty";
         empty.innerHTML = `
             <div class="library-empty-icon">♫</div>
-            <h3>Cola vacía</h3>
-            <p>Agrega canciones a tu biblioteca para reproducirlas.</p>
-        `;
+            <h3>Tu cola está vacía</h3>
+            <p>Agrega canciones desde tu biblioteca para preparar lo que sigue.</p>`;
+        list.appendChild(empty);
+    } else {
+        upcoming.forEach(({ trackIndex, queuePosition }) => {
+            const item = createQueueItem(
+                trackIndex,
+                queuePosition,
+                playbackQueue.length
+            );
+            if (item) list.appendChild(item);
+        });
+    }
 
-        screenContent.appendChild(empty);
+    const addMore = document.createElement("button");
+    addMore.type = "button";
+    addMore.className = "library-add-btn queue-add-more";
+    addMore.textContent = "＋ Agregar canciones desde biblioteca";
+    addMore.addEventListener("click", () => navigate("biblioteca"));
+
+    screenContent.append(current, heading, list, addMore);
+}
+
+function addToQueue(index) {
+    if (!musicLibrary[index]) return;
+
+    if (playbackQueue.includes(index)) {
+        showMessage("Esa canción ya está en la cola.");
         return;
     }
 
-    const list = document.createElement("div");
-    list.className = "library-list";
+    playbackQueue.push(index);
+    renderQueue();
+    renderQueuePanel();
+    if (currentScreen === "biblioteca") renderLibrary();
+    showMessage("Canción agregada a la cola.");
+}
 
-    musicLibrary.forEach((track, index) => {
-        const item = document.createElement("button");
-        item.type = "button";
-        item.className = "library-track";
+function removeFromQueue(index) {
+    const position = playbackQueue.indexOf(index);
+    if (position < 0) return;
 
-        const cover = document.createElement("span");
-        cover.className = "library-track-cover";
-        cover.textContent = index === currentTrackIndex ? "▶" : "♫";
+    if (index === currentTrackIndex) {
+        showMessage("No puedes quitar la canción que está sonando.");
+        return;
+    }
 
-        const info = document.createElement("span");
-        info.className = "library-track-info";
+    playbackQueue.splice(position, 1);
+    renderQueue();
+    renderQueuePanel();
+    if (currentScreen === "biblioteca") renderLibrary();
+    showMessage("Canción quitada de la cola.");
+}
 
-        const title = document.createElement("span");
-        title.className = "library-track-title";
-        title.textContent = track.name;
+function moveQueueItem(position, direction) {
+    const target = position + direction;
+    if (position < 0 || target < 0 || target >= playbackQueue.length) return;
 
-        const artist = document.createElement("span");
-        artist.className = "library-track-artist";
-        artist.textContent = track.artist;
+    // La canción actual permanece en su sitio; solo se reordenan las pendientes.
+    if (playbackQueue[position] === currentTrackIndex ||
+        playbackQueue[target] === currentTrackIndex) return;
 
-        info.append(title, artist);
-        item.append(cover, info);
+    [playbackQueue[position], playbackQueue[target]] =
+        [playbackQueue[target], playbackQueue[position]];
 
-        item.addEventListener("click", () => {
-            navigate("inicio");
-            loadTrack(index, true);
-        });
-
-        list.appendChild(item);
-    });
-
-    screenContent.appendChild(list);
+    renderQueue();
+    renderQueuePanel();
 }
 
 /* =========================================
@@ -1031,6 +1166,7 @@ if (audioPlayer) {
         updatePlayButton();
         updateVinylRotation();
         setupAudioAnalyser();
+        renderQueuePanel();
     });
 
     audioPlayer.addEventListener("pause", () => {
@@ -1376,21 +1512,42 @@ if (settingsModal) settingsModal.addEventListener("click", event => { if (event.
 function renderQueuePanel() {
     const list = $("queueList");
     if (!list) return;
+
     list.innerHTML = "";
-    const upcoming = playbackQueue.filter(index => index !== currentTrackIndex);
+
+    const upcoming = getUpcomingQueueEntries().map(item => item.trackIndex);
+
     if (!upcoming.length) {
         list.innerHTML = '<div class="empty-queue">Agrega canciones para formar tu cola.</div>';
         return;
     }
+
     upcoming.forEach(index => {
         const track = musicLibrary[index];
         if (!track) return;
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = "queue-track";
-        button.textContent = track.name;
-        button.addEventListener("click", () => { loadTrack(index, true); renderQueuePanel(); });
-        list.appendChild(button);
+
+        const row = document.createElement("div");
+        row.className = "queue-panel-row";
+
+        const play = document.createElement("button");
+        play.type = "button";
+        play.className = "queue-track";
+        play.textContent = track.name;
+        play.addEventListener("click", () => {
+            loadTrack(index, true);
+            renderQueuePanel();
+            renderQueue();
+        });
+
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "queue-action-btn remove";
+        remove.textContent = "×";
+        remove.title = "Quitar de la cola";
+        remove.addEventListener("click", () => removeFromQueue(index));
+
+        row.append(play, remove);
+        list.appendChild(row);
     });
 }
 

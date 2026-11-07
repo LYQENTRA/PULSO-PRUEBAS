@@ -1524,3 +1524,136 @@ button:disabled {
     transform: translateY(92px);
   }
 }
+
+
+/* =========================================
+   COLA DE REPRODUCCIÓN INTERACTIVA
+========================================= */
+
+.library-track-play {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+}
+
+.library-track-play .library-track-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.queue-add-btn,
+.queue-action-btn {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid rgba(57,255,20,.24);
+  border-radius: 11px;
+  background: rgba(57,255,20,.08);
+  color: var(--neon);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.queue-add-btn:disabled {
+  opacity: .55;
+}
+
+.queue-current-section {
+  margin-bottom: 24px;
+  padding: 17px;
+  border: 1px solid rgba(57,255,20,.2);
+  border-radius: 16px;
+  background: rgba(57,255,20,.045);
+}
+
+.queue-current-section h3,
+.queue-upcoming-heading {
+  margin: 0 0 12px;
+  color: #fff;
+  font-size: 16px;
+}
+
+.queue-current-track {
+  padding: 12px;
+  border-radius: 11px;
+  background: rgba(57,255,20,.09);
+  color: var(--neon);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.queue-screen-empty {
+  color: var(--gray);
+  font-size: 13px;
+}
+
+.queue-upcoming-heading {
+  margin-top: 8px;
+}
+
+.queue-screen-list {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.queue-item,
+.queue-panel-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.queue-item .queue-track,
+.queue-panel-row .queue-track {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.queue-item-actions {
+  display: flex;
+  gap: 5px;
+}
+
+.queue-action-btn {
+  width: 32px;
+  height: 32px;
+  flex-basis: 32px;
+  font-size: 16px;
+}
+
+.queue-action-btn:disabled {
+  opacity: .25;
+}
+
+.queue-action-btn.remove {
+  border-color: rgba(255,90,90,.25);
+  background: rgba(255,70,70,.08);
+  color: #ff8585;
+}
+
+.queue-panel-row {
+  margin-bottom: 7px;
+}
+
+.queue-panel-row .queue-track {
+  margin-bottom: 0;
+}
+
+.queue-add-more {
+  margin-top: 18px;
+}
