@@ -56,18 +56,31 @@ jobs:
 
           permissions = [
               'android.permission.READ_MEDIA_AUDIO',
-              'android.permission.READ_EXTERNAL_STORAGE'
+              'android.permission.READ_EXTERNAL_STORAGE',
+              'android.permission.FOREGROUND_SERVICE',
+              'android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK',
+              'android.permission.POST_NOTIFICATIONS'
           ]
           additions = []
           if permissions[0] not in text:
               additions.append('    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />')
           if permissions[1] not in text:
               additions.append('    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />')
+          for permission in permissions[2:]:
+              if permission not in text:
+                  additions.append(f'    <uses-permission android:name="{permission}" />')
+
+          app_match = re.search(r'<application\b[^>]*>', text)
+          if not app_match:
+              raise SystemExit('AndroidManifest.xml no contiene <application>')
+          if 'PulsoPlaybackService' not in text:
+              service = '\n        <service android:name="com.lyqentra.pulso.PulsoPlaybackService" android:exported="false" android:foregroundServiceType="mediaPlayback">\n            <intent-filter><action android:name="android.media.browse.MediaBrowserService" /></intent-filter>\n        </service>'
+              text = text[:app_match.end()] + service + text[app_match.end():]
 
           if additions:
               insert_at = match.end()
               text = text[:insert_at] + '\n' + '\n'.join(additions) + text[insert_at:]
-              manifest.write_text(text, encoding='utf-8')
+          manifest.write_text(text, encoding='utf-8')
 
           # Verifica que el XML siga siendo válido antes de compilar.
           import xml.etree.ElementTree as ET
