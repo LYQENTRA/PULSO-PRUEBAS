@@ -72,6 +72,8 @@ let animationFrame = null;
 const PulsoNative = window.Capacitor?.Plugins?.PulsoMedia || null;
 const isNativeAndroid = Boolean(PulsoNative);
 let nativeStateTimer = null;
+let nativeVisualizerTimer = null;
+let nativeFrequencyData = new Uint8Array(64);
 let librarySearchTerm = "";
 
 const audioSupported = Boolean(
@@ -364,6 +366,7 @@ async function playCurrentTrack() {
         if (isNativeAndroid && musicLibrary[currentTrackIndex]?.native) {
             const track = musicLibrary[currentTrackIndex];
             try { await PulsoNative.requestNotificationPermission(); } catch (_) {}
+            try { await PulsoNative.requestVisualizerPermission(); } catch (_) {}
             await PulsoNative.playInBackground({ uri: track.url, title: track.name, artist: track.artist });
             isPlaying = true; updatePlayButton(); updateVinylRotation(); startNativeStatePolling(); return;
         }
@@ -1101,9 +1104,7 @@ function animateVisualizer() {
         const mode = stage.dataset.visualMode || "circular";
         const count = bars.length;
 
-        if (analyser && frequencyData && isPlaying) {
-            analyser.getByteFrequencyData(frequencyData);
-        }
+        if (analyser && frequencyData && isPlaying) { analyser.getByteFrequencyData(frequencyData); }
 
         bars.forEach((bar, index) => {
             const isMirror = mode === "mirror";
@@ -1113,7 +1114,10 @@ function animateVisualizer() {
                 : index / Math.max(1, count - 1);
 
             let level = 0;
-            if (analyser && frequencyData && isPlaying) {
+            if (isNativeAndroid && isPlaying && nativeFrequencyData.length) {
+                const bin = Math.min(nativeFrequencyData.length - 1, Math.floor(samplePosition * (nativeFrequencyData.length - 1)));
+                level = Math.pow((nativeFrequencyData[bin] || 0) / 255, 0.78);
+            } else if (analyser && frequencyData && isPlaying) {
                 // Repartimos las barras entre las frecuencias que contienen energía musical útil.
                 // Evita asignar las últimas columnas a agudos casi siempre silenciosos.
                 const usableBins = Math.max(8, Math.floor(frequencyData.length * 0.62));
@@ -1459,8 +1463,9 @@ if (searchBtn && searchPanel) searchBtn.addEventListener("click",()=>{searchPane
 if (searchInput) searchInput.addEventListener("input",()=>{librarySearchTerm=searchInput.value.trim().toLocaleLowerCase();if(currentScreen!=="biblioteca")navigate("biblioteca");else renderLibrary();});
 
 function startNativeStatePolling(){
-    if(!isNativeAndroid || nativeStateTimer) return;
-    nativeStateTimer=setInterval(async()=>{try{const s=await PulsoNative.getPlaybackState();isPlaying=!!s.playing;updatePlayButton();updateVinylRotation();if(currentTime)currentTime.textContent=formatTime((s.position||0)/1000);if(totalTime)totalTime.textContent=formatTime((s.duration||0)/1000);if(progressBar&&s.duration)progressBar.value=(s.position/s.duration)*100;}catch(e){}},500);
+    if(!isNativeAndroid) return;
+    if(!nativeStateTimer) nativeStateTimer=setInterval(async()=>{try{const s=await PulsoNative.getPlaybackState();isPlaying=!!s.playing;updatePlayButton();updateVinylRotation();if(currentTime)currentTime.textContent=formatTime((s.position||0)/1000);if(totalTime)totalTime.textContent=formatTime((s.duration||0)/1000);if(progressBar&&s.duration)progressBar.value=(s.position/s.duration)*100;}catch(e){}},200);
+    if(!nativeVisualizerTimer) nativeVisualizerTimer=setInterval(async()=>{try{const result=await PulsoNative.getVisualizerData();const values=result?.spectrum||[];if(values.length)nativeFrequencyData=Uint8Array.from(values.map(v=>Math.max(0,Math.min(255,Number(v)||0))));}catch(e){}},80);
 }
 if (isNativeAndroid) {
     PulsoNative.addListener("mediaNext", playNextTrack);
