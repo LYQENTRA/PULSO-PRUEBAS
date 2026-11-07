@@ -20,11 +20,11 @@ const musicFileInput = $("musicFileInput");
 
 const playBtn = $("playBtn");
 const nextBtn = $("nextBtn");
-const prevBtn = $("prevBtn");
+const prevBtn = $("previousBtn");
 
 const progressBar = $("progressBar");
 const currentTime = $("currentTime");
-const totalTime = $("totalTime");
+const totalTime = $("duration");
 
 const songTitle = $("songTitle");
 const songArtist = $("songArtist");
@@ -44,6 +44,8 @@ const libraryTabs = document.querySelectorAll("[data-library-tab]");
 
 let musicLibrary = [];
 let currentTrackIndex = -1;
+let playbackQueue = [];
+let playbackHistory = [];
 
 let currentScreen = "inicio";
 let currentLibraryTab = "canciones";
@@ -203,10 +205,12 @@ function addMusicFiles(files) {
             favorite: false
         });
 
+        playbackQueue.push(musicLibrary.length - 1);
         added++;
     });
 
     updateLibraryCount();
+    renderQueuePanel();
 
     if (added > 0) {
         showMessage(
@@ -278,6 +282,7 @@ function loadTrack(index, autoplay = false) {
     }
 
     updatePlayButton();
+    renderQueuePanel();
 
     if (autoplay) {
         playCurrentTrack();
@@ -341,55 +346,48 @@ function updatePlayButton() {
 ========================================= */
 
 function playNextTrack() {
-    if (musicLibrary.length === 0) {
-        return;
-    }
+    if (!musicLibrary.length) return;
 
-    let nextIndex;
-
+    let nextIndex = -1;
     if (isShuffle && musicLibrary.length > 1) {
-        do {
-            nextIndex = Math.floor(
-                Math.random() * musicLibrary.length
-            );
-        } while (nextIndex === currentTrackIndex);
+        const candidates = musicLibrary.map((_, i) => i).filter(i => i !== currentTrackIndex);
+        nextIndex = candidates[Math.floor(Math.random() * candidates.length)];
     } else {
-        nextIndex = currentTrackIndex + 1;
-
-        if (nextIndex >= musicLibrary.length) {
-            if (repeatMode === 1 || repeatMode === 2) {
-                nextIndex = 0;
-            } else {
-                audioPlayer.pause();
-                return;
-            }
+        const position = playbackQueue.indexOf(currentTrackIndex);
+        if (position >= 0 && position < playbackQueue.length - 1) {
+            nextIndex = playbackQueue[position + 1];
+        } else if (repeatMode === 1 && playbackQueue.length) {
+            nextIndex = playbackQueue[0];
         }
     }
 
+    if (nextIndex < 0) {
+        audioPlayer.pause();
+        showMessage("No hay más canciones en la cola.");
+        return;
+    }
+    if (currentTrackIndex >= 0) playbackHistory.push(currentTrackIndex);
     loadTrack(nextIndex, true);
+    renderQueuePanel();
 }
 
 function playPreviousTrack() {
-    if (!audioPlayer) {
-        return;
-    }
-
+    if (!audioPlayer || currentTrackIndex < 0) return;
     if (audioPlayer.currentTime > 3) {
         audioPlayer.currentTime = 0;
         return;
     }
-
-    if (musicLibrary.length === 0) {
+    let previousIndex = playbackHistory.length ? playbackHistory.pop() : -1;
+    if (previousIndex < 0) {
+        const position = playbackQueue.indexOf(currentTrackIndex);
+        if (position > 0) previousIndex = playbackQueue[position - 1];
+    }
+    if (previousIndex < 0) {
+        showMessage("No hay una canción anterior.");
         return;
     }
-
-    let previousIndex = currentTrackIndex - 1;
-
-    if (previousIndex < 0) {
-        previousIndex = musicLibrary.length - 1;
-    }
-
     loadTrack(previousIndex, true);
+    renderQueuePanel();
 }
 
 /* =========================================
@@ -663,7 +661,7 @@ function renderSettings() {
             <div class="visualizer-options">
                 <button class="visualizer-option" data-visual-mode="circular">Circular</button>
                 <button class="visualizer-option" data-visual-mode="bars">Barras</button>
-                <button class="visualizer-option" data-visual-mode="waves">Olas</button>
+                <button class="visualizer-option" data-visual-mode="wave">Olas</button>
                 <button class="visualizer-option" data-visual-mode="mirror">Simétrico</button>
             </div>
         </div>
@@ -786,7 +784,7 @@ function setVisualizerMode(mode) {
     const validModes = [
         "circular",
         "bars",
-        "waves",
+        "wave",
         "mirror"
     ];
 
@@ -797,7 +795,7 @@ function setVisualizerMode(mode) {
     visualizer.classList.remove(
         "mode-circular",
         "mode-bars",
-        "mode-waves",
+        "mode-wave",
         "mode-mirror"
     );
 
@@ -812,12 +810,13 @@ function setVisualizerMode(mode) {
 
 function createVisualizerBars() {
     const visualizer = $("visualizerCircle");
+    const barContainer = $("visualizerBars");
 
-    if (!visualizer) {
+    if (!visualizer || !barContainer) {
         return;
     }
 
-    visualizer.querySelectorAll(".visual-bar").forEach(bar => {
+    barContainer.querySelectorAll(".visual-bar").forEach(bar => {
         bar.remove();
     });
 
@@ -829,7 +828,7 @@ function createVisualizerBars() {
         bar.className = "visual-bar";
         bar.dataset.index = String(i);
 
-        visualizer.appendChild(bar);
+        barContainer.appendChild(bar);
     }
 
     animateVisualizer();
@@ -850,7 +849,7 @@ function animateVisualizer() {
         return;
     }
 
-    const bars = visualizer.querySelectorAll(".visual-bar");
+    const bars = $("visualizerBars")?.querySelectorAll(".visual-bar") || [];
 
     function draw() {
         const mode = Array.from(visualizer.classList)
@@ -900,7 +899,7 @@ function animateVisualizer() {
                         `translateX(-50%) scaleY(${index % 2 === 0 ? 1 : -1})`;
                 }
 
-                if (barMode === "waves") {
+                if (barMode === "wave") {
                     const wave = Math.sin(
                         (index / bars.length) * Math.PI * 4
                     );
@@ -1278,6 +1277,58 @@ document.addEventListener("keydown", event => {
     }
 });
 
+
+/* CONTROLES DE ESTILO DEL MODAL ORIGINAL */
+document.querySelectorAll("[data-visual]").forEach(button => {
+    button.addEventListener("click", () => {
+        const map = { circle: "circular", bars: "bars", wave: "wave", mirror: "mirror" };
+        setVisualizerMode(map[button.dataset.visual] || "circular");
+        document.querySelectorAll("[data-visual]").forEach(item => item.classList.toggle("selected", item === button));
+    });
+});
+
+const settingsModal = $("settingsModal");
+const closeSettings = $("closeSettings");
+const moreBtn = $("moreBtn");
+if (moreBtn && settingsModal) moreBtn.addEventListener("click", () => { settingsModal.hidden = false; });
+if (closeSettings && settingsModal) closeSettings.addEventListener("click", () => { settingsModal.hidden = true; });
+if (settingsModal) settingsModal.addEventListener("click", event => { if (event.target === settingsModal) settingsModal.hidden = true; });
+
+function renderQueuePanel() {
+    const list = $("queueList");
+    if (!list) return;
+    list.innerHTML = "";
+    const upcoming = playbackQueue.filter(index => index !== currentTrackIndex);
+    if (!upcoming.length) {
+        list.innerHTML = '<div class="empty-queue">Agrega canciones para formar tu cola.</div>';
+        return;
+    }
+    upcoming.forEach(index => {
+        const track = musicLibrary[index];
+        if (!track) return;
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "queue-track";
+        button.textContent = track.name;
+        button.addEventListener("click", () => { loadTrack(index, true); renderQueuePanel(); });
+        list.appendChild(button);
+    });
+}
+
+const queueBtn = $("queueBtn");
+if (queueBtn) queueBtn.addEventListener("click", () => {
+    const panel = $("queuePanel");
+    if (panel) panel.scrollIntoView({ behavior: "smooth", block: "center" });
+});
+const queueToggle = $("queueToggle");
+if (queueToggle) queueToggle.addEventListener("click", () => {
+    const list = $("queueList");
+    if (!list) return;
+    list.hidden = !list.hidden;
+    queueToggle.setAttribute("aria-expanded", String(!list.hidden));
+    queueToggle.textContent = list.hidden ? "⌄" : "⌃";
+});
+
 /* =========================================
    INICIALIZACIÓN
 ========================================= */
@@ -1292,6 +1343,7 @@ function initializePulso() {
     updateVinylRotation();
 
     createVisualizerBars();
+    setVisualizerMode("circular");
 
     const visualizer = $("visualizerCircle");
 
