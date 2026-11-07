@@ -23,7 +23,8 @@ import com.getcapacitor.annotation.PermissionCallback;
 @CapacitorPlugin(name = "PulsoMedia", permissions = {
     @Permission(alias = "audio", strings = { Manifest.permission.READ_MEDIA_AUDIO }),
     @Permission(alias = "legacyAudio", strings = { Manifest.permission.READ_EXTERNAL_STORAGE }),
-    @Permission(alias = "notifications", strings = { Manifest.permission.POST_NOTIFICATIONS })
+    @Permission(alias = "notifications", strings = { Manifest.permission.POST_NOTIFICATIONS }),
+    @Permission(alias = "recordAudio", strings = { Manifest.permission.RECORD_AUDIO })
 })
 public class PulsoMediaPlugin extends Plugin {
     private BroadcastReceiver mediaReceiver;
@@ -85,6 +86,17 @@ public class PulsoMediaPlugin extends Plugin {
         result.put("granted", getPermissionState(alias) == PermissionState.GRANTED);
         call.resolve(result);
     }
+
+
+    @PluginMethod
+    public void requestVisualizerPermission(PluginCall call) {
+        if (getPermissionState("recordAudio") == PermissionState.GRANTED) { JSObject r = new JSObject(); r.put("granted", true); call.resolve(r); }
+        else requestPermissionForAlias("recordAudio", call, "visualizerPermissionResult");
+    }
+    @PermissionCallback
+    private void visualizerPermissionResult(PluginCall call) { JSObject r = new JSObject(); r.put("granted", getPermissionState("recordAudio") == PermissionState.GRANTED); call.resolve(r); }
+    @PluginMethod
+    public void getVisualizerData(PluginCall call) { JSArray values = new JSArray(); for (int value : PulsoPlaybackService.getSpectrum()) values.put(value); JSObject out = new JSObject(); out.put("spectrum", values); call.resolve(out); }
 
     @PluginMethod
     public void scanAudio(PluginCall call) {
@@ -168,7 +180,7 @@ public class PulsoMediaPlugin extends Plugin {
     }
 
     @PluginMethod public void getPlaybackState(PluginCall call) {
-        JSObject out = new JSObject(); out.put("position", PulsoPlaybackService.currentPosition); out.put("duration", PulsoPlaybackService.currentDuration); out.put("playing", PulsoPlaybackService.playing); call.resolve(out);
+        PulsoPlaybackService service = PulsoPlaybackService.instance; JSObject out = service != null ? service.getPlaybackSnapshot() : new JSObject(); if (service == null) { out.put("position", 0); out.put("duration", 0); out.put("playing", false); } call.resolve(out);
     }
 
     @PluginMethod public void setEqualizer(PluginCall call) {
