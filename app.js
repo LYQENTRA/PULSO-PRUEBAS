@@ -908,10 +908,9 @@ function createVisualizerBars() {
 function animateVisualizer() {
     if (animationFrame) cancelAnimationFrame(animationFrame);
 
-    const visualizer = $("visualizerCircle");
     const stage = document.querySelector(".visual-stage");
     const container = $("visualizerBars");
-    if (!visualizer || !stage || !container) return;
+    if (!stage || !container) return;
 
     const bars = Array.from(container.querySelectorAll(".visual-bar"));
 
@@ -924,55 +923,52 @@ function animateVisualizer() {
         }
 
         bars.forEach((bar, index) => {
-            // En Simétrico, cada barra tiene una pareja exacta debajo del eje.
-            const pairIndex = mode === "mirror" ? index % 24 : index;
-            const audioPosition = mode === "mirror" ? pairIndex / 24 : index / count;
-            let level = 0;
+            const isMirror = mode === "mirror";
+            const pairIndex = isMirror ? index % (count / 2) : index;
+            const samplePosition = isMirror
+                ? pairIndex / Math.max(1, count / 2 - 1)
+                : index / Math.max(1, count - 1);
 
+            let level = 0;
             if (analyser && frequencyData && isPlaying) {
                 const frequencyIndex = Math.min(
                     frequencyData.length - 1,
-                    Math.floor(audioPosition * frequencyData.length)
+                    Math.floor(samplePosition * frequencyData.length)
                 );
                 level = (frequencyData[frequencyIndex] || 0) / 255;
             }
 
-            const idle = mode === "circular" ? 10 : 18;
-            const height = isPlaying
-                ? idle + level * (mode === "circular" ? 62 : 145)
-                : idle;
-
+            const base = mode === "circular" ? 9 : 18;
+            const amplitude = mode === "circular" ? 62 : 125;
+            const height = isPlaying ? base + level * amplitude : base;
             bar.style.height = `${height}px`;
 
             if (mode === "circular") {
-                const angle = index / count * 360;
+                const angle = (index / count) * 360;
                 bar.style.left = "50%";
                 bar.style.top = "50%";
                 bar.style.bottom = "auto";
-                bar.style.transform = `translate(-50%, -50%) rotate(${angle}deg) translateY(-210px)`;
+                bar.style.transform =
+                    `translate(-50%, -50%) rotate(${angle}deg) translateY(-210px)`;
                 bar.style.transformOrigin = "center center";
-            } else if (mode === "mirror") {
-                const left = 4 + (pairIndex / 23) * 92;
-                const lowerHalf = index >= 24;
+            } else {
+                const positionIndex = isMirror ? pairIndex : index;
+                const positionCount = isMirror ? count / 2 : count;
+                const left = 3 + (positionIndex / Math.max(1, positionCount - 1)) * 94;
+                const lowerHalf = isMirror && index >= count / 2;
+
                 bar.style.left = `${left}%`;
                 bar.style.top = "auto";
                 bar.style.bottom = "50%";
-                bar.style.transformOrigin = lowerHalf ? "center bottom" : "center bottom";
+                bar.style.transformOrigin = "center bottom";
                 bar.style.transform = lowerHalf
                     ? "translateX(-50%) scaleY(-1)"
                     : "translateX(-50%)";
-                bar.style.height = `${Math.min(height, 145)}px`;
-            } else {
-                const left = 2 + (index / (count - 1)) * 96;
-                bar.style.left = `${left}%`;
-                bar.style.top = "auto";
-                bar.style.bottom = "0";
-                bar.style.transform = "translateX(-50%)";
-                bar.style.transformOrigin = "center bottom";
 
                 if (mode === "wave") {
-                    const wave = (Math.sin(index * 0.34) + 1) / 2;
-                    bar.style.height = `${Math.max(24, height * (0.55 + wave * 0.85))}px`;
+                    const wave = (Math.sin(positionIndex * 0.34) + 1) / 2;
+                    bar.style.height =
+                        `${Math.max(24, height * (0.65 + wave * 0.75))}px`;
                 }
             }
         });

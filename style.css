@@ -1344,3 +1344,99 @@ button:disabled {
   max-height: 42%;
   border-radius: 7px;
 }
+
+
+/* =========================================
+   AJUSTE DE COMPOSICIÓN DEL VISUALIZADOR
+   Los modos horizontales usan todo el escenario.
+========================================= */
+
+.visual-stage[data-visual-mode="bars"] .visualizer-circle,
+.visual-stage[data-visual-mode="wave"] .visualizer-circle,
+.visual-stage[data-visual-mode="mirror"] .visualizer-circle {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  aspect-ratio: auto;
+  border-radius: 0;
+  display: block;
+  z-index: 2;
+}
+
+.visual-stage[data-visual-mode="bars"] .visualizer-bars,
+.visual-stage[data-visual-mode="wave"] .visualizer-bars,
+.visual-stage[data-visual-mode="mirror"] .visualizer-bars {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+}
+
+.visual-stage[data-visual-mode="bars"] .album-center,
+.visual-stage[data-visual-mode="wave"] .album-center,
+.visual-stage[data-visual-mode="mirror"] .album-center,
+.visual-stage[data-visual-mode="bars"] #vinyl,
+.visual-stage[data-visual-mode="wave"] #vinyl,
+.visual-stage[data-visual-mode="mirror"] #vinyl {
+  display: none !important;
+}
+
+.visual-stage[data-visual-mode="bars"] .visual-bar,
+.visual-stage[data-visual-mode="wave"] .visual-bar,
+.visual-stage[data-visual-mode="mirror"] .visual-bar {
+  width: clamp(4px, 1.05vw, 7px);
+  max-height: 145px;
+  border-radius: 7px;
+  box-shadow: 0 0 12px rgba(57,255,20,.8);
+}
+
+.visual-stage[data-visual-mode="bars"] .visual-bar,
+.visual-stage[data-visual-mode="wave"] .visual-bar {
+  bottom: 50%;
+}
+
+.visual-stage[data-visual-mode="mirror"] .visual-bar {
+  bottom: 50%;
+}
+
+.visual-stage[data-visual-mode="wave"] .visual-bar {
+  width: clamp(5px, 1.2vw, 8px);
+  border-radius: 999px;
+}
+
+/* El modo circular conserva su composición centrada original. */
+.visual-stage[data-visual-mode="circular"] .visualizer-circle {
+  position: relative;
+  inset: auto;
+  width: clamp(190px, 55vw, 270px);
+  height: auto;
+  aspect-ratio: 1;
+  border-radius: 50%;
+}
+
+.visual-stage[data-visual-mode="circular"] .album-center {
+  display: block;
+}
+
+.visual-stage[data-visual-mode="circular"] #vinyl {
+  display: block;
+}
+
+/* Menú: ondas decorativas más discretas y compactas. */
+.drawer-decoration {
+  min-height: 95px;
+  max-height: 95px;
+}
+
+.drawer-waves-image {
+  width: 112%;
+  height: 100px;
+  left: -6%;
+  bottom: -8px;
+  object-fit: contain;
+  opacity: .48;
+  filter: drop-shadow(0 0 6px rgba(57,255,20,.22));
+}
