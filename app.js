@@ -58,6 +58,15 @@ let audioContext = null;
 let analyser = null;
 let audioSource = null;
 let frequencyData = null;
+let equalizerFilters = [];
+const equalizerValues = [0, 0, 0, 0, 0];
+const equalizerBands = [
+    { label: "Graves", frequency: 60, type: "lowshelf" },
+    { label: "Medios bajos", frequency: 250, type: "peaking" },
+    { label: "Medios", frequency: 1000, type: "peaking" },
+    { label: "Medios altos", frequency: 4000, type: "peaking" },
+    { label: "Agudos", frequency: 10000, type: "highshelf" }
+];
 
 let animationFrame = null;
 
@@ -132,12 +141,15 @@ function navigate(screen) {
         const titles = {
             biblioteca: "Mi biblioteca",
             favoritos: "Mis favoritos",
-            ajustes: "Ajustes",
+            ajustes: "Configuración",
+            configuracion: "Configuración",
             cola: "Cola de reproducción",
+            listas: "Mis listas",
+            carpetas: "Carpetas",
+            ecualizador: "Ecualizador",
             albumes: "Álbumes",
             artistas: "Artistas"
         };
-
         screenTitle.textContent = titles[screen] || "PULSO";
     }
 
@@ -157,8 +169,20 @@ function navigate(screen) {
         renderLibraryCategory(screen);
     }
 
-    if (screen === "ajustes") {
+    if (screen === "ajustes" || screen === "configuracion") {
         renderSettings();
+    }
+
+    if (screen === "ecualizador") {
+        renderEqualizer();
+    }
+
+    if (screen === "listas") {
+        renderQueue();
+    }
+
+    if (screen === "carpetas") {
+        renderSimpleScreen("Carpetas", "La exploración automática de carpetas estará disponible con la integración Android de PULSO.");
     }
 
     window.scrollTo({
@@ -726,15 +750,24 @@ function setupAudioAnalyser() {
             analyser.fftSize = 256;
             analyser.smoothingTimeConstant = 0.78;
 
-            audioSource =
-                audioContext.createMediaElementSource(audioPlayer);
+            audioSource = audioContext.createMediaElementSource(audioPlayer);
 
-            audioSource.connect(analyser);
+            let previousNode = audioSource;
+            equalizerFilters = equalizerBands.map(band => {
+                const filter = audioContext.createBiquadFilter();
+                filter.type = band.type;
+                filter.frequency.value = band.frequency;
+                filter.Q.value = 1;
+                filter.gain.value = equalizerValues[equalizerFilters.length] || 0;
+                previousNode.connect(filter);
+                previousNode = filter;
+                return filter;
+            });
+
+            previousNode.connect(analyser);
             analyser.connect(audioContext.destination);
 
-            frequencyData = new Uint8Array(
-                analyser.frequencyBinCount
-            );
+            frequencyData = new Uint8Array(analyser.frequencyBinCount);
         }
 
         if (audioContext.state === "suspended") {
@@ -770,6 +803,72 @@ function getAudioLevel(start, end) {
     return count ? total / count / 255 : 0;
 }
 
+function renderSimpleScreen(title, description) {
+    if (!screenContent) return;
+    screenContent.innerHTML = "";
+    const panel = document.createElement("div");
+    panel.className = "library-empty";
+    const heading = document.createElement("h3");
+    heading.textContent = title;
+    const text = document.createElement("p");
+    text.textContent = description;
+    panel.append(heading, text);
+    screenContent.appendChild(panel);
+}
+
+function renderEqualizer() {
+    if (!screenContent) return;
+    screenContent.innerHTML = "";
+    const panel = document.createElement("section");
+    panel.className = "settings-section equalizer-panel";
+    const heading = document.createElement("h3");
+    heading.textContent = "Ecualizador de 5 bandas";
+    panel.appendChild(heading);
+
+    const note = document.createElement("p");
+    note.className = "equalizer-note";
+    note.textContent = "Ajusta el sonido mientras se reproduce tu música.";
+    panel.appendChild(note);
+
+    equalizerBands.forEach((band, index) => {
+        const row = document.createElement("label");
+        row.className = "equalizer-band";
+        const name = document.createElement("span");
+        name.textContent = band.label;
+        const range = document.createElement("input");
+        range.type = "range";
+        range.min = "-12";
+        range.max = "12";
+        range.step = "1";
+        range.value = String(equalizerFilters[index]?.gain.value ?? equalizerValues[index] ?? 0);
+        range.setAttribute("aria-label", band.label);
+        const value = document.createElement("output");
+        value.textContent = `${range.value} dB`;
+        range.addEventListener("input", () => {
+            const gain = Number(range.value);
+            equalizerValues[index] = gain;
+            if (equalizerFilters[index]) equalizerFilters[index].gain.value = gain;
+            value.textContent = `${gain} dB`;
+        });
+        row.append(name, range, value);
+        panel.appendChild(row);
+    });
+
+    const reset = document.createElement("button");
+    reset.type = "button";
+    reset.className = "library-add-btn equalizer-reset";
+    reset.textContent = "Restablecer ecualizador";
+    reset.addEventListener("click", () => {
+        equalizerFilters.forEach(filter => filter.gain.value = 0);
+        equalizerValues.fill(0);
+        panel.querySelectorAll("input[type=range]").forEach(input => input.value = "0");
+        panel.querySelectorAll("output").forEach(output => output.textContent = "0 dB");
+    });
+    panel.appendChild(reset);
+    screenContent.appendChild(panel);
+    if (!audioContext) showMessage("Reproduce una canción para activar los controles de sonido.");
+}
+
 /* =========================================
    ACTIVAR MODO DEL VISUALIZADOR
 ========================================= */
@@ -800,6 +899,8 @@ function setVisualizerMode(mode) {
     );
 
     visualizer.classList.add(`mode-${mode}`);
+    const stage = document.querySelector(".visual-stage");
+    if (stage) stage.dataset.visualMode = mode;
 
     createVisualizerBars();
 }
