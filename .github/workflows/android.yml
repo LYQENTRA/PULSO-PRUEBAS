@@ -75,7 +75,7 @@ jobs:
           if not app_match:
               raise SystemExit('AndroidManifest.xml no contiene <application>')
           if 'PulsoPlaybackService' not in text:
-              service = '\n        <service android:name="com.lyqentra.pulso.PulsoPlaybackService" android:exported="false" android:foregroundServiceType="mediaPlayback">\n            <intent-filter><action android:name="android.media.browse.MediaBrowserService" /></intent-filter>\n        </service>'
+              service = '\n        <service android:name="com.lyqentra.pulso.PulsoPlaybackService" android:exported="false" android:foregroundServiceType="mediaPlayback" />'
               text = text[:app_match.end()] + service + text[app_match.end():]
 
           if additions:
