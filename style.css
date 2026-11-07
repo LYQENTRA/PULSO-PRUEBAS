@@ -1320,3 +1320,27 @@ button:disabled {
   .visual-stage[data-visual-mode="wave"] .visualizer-bars,
   .visual-stage[data-visual-mode="mirror"] .visualizer-bars { inset: 8% 0; height: 84%; }
 }
+
+
+/* AJUSTE FINO: DECORACIÓN DEL MENÚ Y SIMÉTRICO */
+.drawer-decoration {
+  min-height: 95px;
+  max-height: 95px;
+  margin-top: auto;
+}
+.drawer-waves-image {
+  width: 112%;
+  height: 105px;
+  left: -6%;
+  bottom: -8px;
+  object-fit: contain;
+  opacity: .58;
+}
+.visual-stage[data-visual-mode="mirror"] .visualizer-bars {
+  inset: 7% 0;
+  height: 86%;
+}
+.visual-stage[data-visual-mode="mirror"] .visual-bar {
+  max-height: 42%;
+  border-radius: 7px;
+}

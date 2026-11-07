@@ -919,14 +919,21 @@ function animateVisualizer() {
         const mode = stage.dataset.visualMode || "circular";
         const count = bars.length;
 
+        if (analyser && frequencyData && isPlaying) {
+            analyser.getByteFrequencyData(frequencyData);
+        }
+
         bars.forEach((bar, index) => {
+            // En Simétrico, cada barra tiene una pareja exacta debajo del eje.
+            const pairIndex = mode === "mirror" ? index % 24 : index;
+            const audioPosition = mode === "mirror" ? pairIndex / 24 : index / count;
             let level = 0;
+
             if (analyser && frequencyData && isPlaying) {
                 const frequencyIndex = Math.min(
                     frequencyData.length - 1,
-                    Math.floor(index / count * frequencyData.length)
+                    Math.floor(audioPosition * frequencyData.length)
                 );
-                analyser.getByteFrequencyData(frequencyData);
                 level = (frequencyData[frequencyIndex] || 0) / 255;
             }
 
@@ -944,18 +951,24 @@ function animateVisualizer() {
                 bar.style.bottom = "auto";
                 bar.style.transform = `translate(-50%, -50%) rotate(${angle}deg) translateY(-210px)`;
                 bar.style.transformOrigin = "center center";
-            } else {
-                const usable = mode === "mirror" ? 46 : 92;
-                const left = mode === "mirror"
-                    ? 2 + (index / (count - 1)) * usable
-                    : 2 + (index / (count - 1)) * usable;
+            } else if (mode === "mirror") {
+                const left = 4 + (pairIndex / 23) * 92;
+                const lowerHalf = index >= 24;
                 bar.style.left = `${left}%`;
                 bar.style.top = "auto";
-                bar.style.bottom = mode === "mirror" ? "50%" : "0";
-                bar.style.transform = mode === "mirror" && index % 2
+                bar.style.bottom = "50%";
+                bar.style.transformOrigin = lowerHalf ? "center bottom" : "center bottom";
+                bar.style.transform = lowerHalf
                     ? "translateX(-50%) scaleY(-1)"
                     : "translateX(-50%)";
-                bar.style.transformOrigin = mode === "mirror" ? "center bottom" : "center bottom";
+                bar.style.height = `${Math.min(height, 145)}px`;
+            } else {
+                const left = 2 + (index / (count - 1)) * 96;
+                bar.style.left = `${left}%`;
+                bar.style.top = "auto";
+                bar.style.bottom = "0";
+                bar.style.transform = "translateX(-50%)";
+                bar.style.transformOrigin = "center bottom";
 
                 if (mode === "wave") {
                     const wave = (Math.sin(index * 0.34) + 1) / 2;
