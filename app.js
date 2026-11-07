@@ -181,9 +181,7 @@ function navigate(screen) {
         renderQueue();
     }
 
-    if (screen === "carpetas") {
-        renderSimpleScreen("Carpetas", "La exploración automática de carpetas estará disponible con la integración Android de PULSO.");
-    }
+    if (screen === "carpetas") renderFolders();
 
     window.scrollTo({
         top: 0,
@@ -223,7 +221,9 @@ function addMusicFiles(files) {
             id: `${Date.now()}-${Math.random()}`,
             file: file,
             name: getTrackName(file),
-            artist: "Artista desconocido",
+            artist: inferFolderMetadata(file).artist,
+            album: inferFolderMetadata(file).album,
+            folder: (file.webkitRelativePath || "").split("/").slice(0, -1).join("/") || "Archivos agregados",
             duration: 0,
             url: URL.createObjectURL(file),
             favorite: false
@@ -524,36 +524,58 @@ function renderLibrary() {
 ========================================= */
 
 function renderLibraryCategory(category) {
-    if (!screenContent) {
+    if (!screenContent) return;
+    screenContent.innerHTML = "";
+    const field = category === "albumes" ? "album" : "artist";
+    const groups = new Map();
+    musicLibrary.forEach((track, index) => {
+        const label = track[field] || (field === "album" ? "Álbum desconocido" : "Artista desconocido");
+        if (!groups.has(label)) groups.set(label, []);
+        groups.get(label).push(index);
+    });
+    if (!groups.size) {
+        renderSimpleScreen(category === "albumes" ? "Todavía no hay álbumes" : "Todavía no hay artistas",
+            "Agrega música o selecciona una carpeta para organizar tus canciones.");
         return;
     }
+    const list = document.createElement("div");
+    list.className = "library-list";
+    [...groups.entries()].sort((a,b) => a[0].localeCompare(b[0])).forEach(([label, indexes]) => {
+        const row = document.createElement("button");
+        row.type = "button"; row.className = "library-track";
+        const cover = document.createElement("span");
+        cover.className = "library-track-cover"; cover.textContent = field === "album" ? "▣" : "♙";
+        const info = document.createElement("span"); info.className = "library-track-info";
+        const title = document.createElement("span"); title.className = "library-track-title"; title.textContent = label;
+        const sub = document.createElement("span"); sub.className = "library-track-artist";
+        sub.textContent = `${indexes.length} ${indexes.length === 1 ? "canción" : "canciones"}`;
+        info.append(title, sub); row.append(cover, info);
+        row.addEventListener("click", () => renderGroupTracks(label, indexes, category));
+        list.appendChild(row);
+    });
+    screenContent.appendChild(list);
+}
 
+function renderGroupTracks(label, indexes, category) {
+    if (!screenContent) return;
     screenContent.innerHTML = "";
-
-    const empty = document.createElement("div");
-    empty.className = "library-empty";
-
-    const icon = document.createElement("div");
-    icon.className = "library-empty-icon";
-    icon.textContent = category === "albumes" ? "▣" : "♙";
-
-    const heading = document.createElement("h3");
-    const message = document.createElement("p");
-
-    if (category === "albumes") {
-        heading.textContent = "Álbumes";
-        message.textContent = musicLibrary.length
-            ? "La organización por álbumes estará disponible cuando integremos los metadatos de las canciones."
-            : "Agrega música para comenzar a organizar tus álbumes.";
-    } else {
-        heading.textContent = "Artistas";
-        message.textContent = musicLibrary.length
-            ? "La organización por artistas estará disponible cuando integremos los metadatos de las canciones."
-            : "Agrega música para comenzar a organizar tus artistas.";
-    }
-
-    empty.append(icon, heading, message);
-    screenContent.appendChild(empty);
+    const back = document.createElement("button"); back.className = "library-back";
+    back.textContent = "← Volver";
+    back.addEventListener("click", () => category === "carpetas" ? renderFolders() : renderLibraryCategory(category));
+    const heading = document.createElement("h3"); heading.textContent = label;
+    heading.style.margin = "10px 0 16px";
+    const list = document.createElement("div"); list.className = "library-list";
+    indexes.forEach(index => {
+        const track = musicLibrary[index];
+        const row = document.createElement("button"); row.className = "library-track";
+        const info = document.createElement("span"); info.className = "library-track-info";
+        const name = document.createElement("span"); name.className = "library-track-title"; name.textContent = track.name;
+        const sub = document.createElement("span"); sub.className = "library-track-artist"; sub.textContent = track.artist || "Artista desconocido";
+        info.append(name, sub); row.append(info);
+        row.addEventListener("click", () => { navigate("inicio"); loadTrack(index, true); });
+        list.appendChild(row);
+    });
+    screenContent.append(back, heading, list);
 }
 
 /* =========================================
@@ -936,6 +958,73 @@ function getAudioLevel(start, end) {
     }
 
     return count ? total / count / 255 : 0;
+}
+
+function inferFolderMetadata(file) {
+    const path = file.webkitRelativePath || file.name;
+    const parts = path.split("/").filter(Boolean);
+    return {
+        album: parts.length > 1 ? parts[parts.length - 2] : "Álbum desconocido",
+        artist: parts.length > 2 ? parts[parts.length - 3] : "Artista desconocido"
+    };
+}
+
+function renderFolders() {
+    if (!screenContent) return;
+    screenContent.innerHTML = "";
+    const panel = document.createElement("div"); panel.className = "library-empty";
+    const icon = document.createElement("div"); icon.className = "library-empty-icon"; icon.textContent = "📁";
+    const title = document.createElement("h3"); title.textContent = "Explorar carpetas de música";
+    const desc = document.createElement("p"); desc.textContent = "Selecciona una carpeta del teléfono. PULSO agregará los archivos de audio que encuentre.";
+    const button = document.createElement("button"); button.className = "library-add-btn"; button.textContent = "Elegir carpeta";
+    button.addEventListener("click", () => {
+        let picker = $("folderMusicInput");
+        if (!picker) {
+            picker = document.createElement("input"); picker.type = "file"; picker.id = "folderMusicInput";
+            picker.accept = "audio/*"; picker.multiple = true; picker.setAttribute("webkitdirectory", ""); picker.hidden = true;
+            document.body.appendChild(picker);
+            picker.addEventListener("change", () => { addMusicFiles(picker.files); renderFolders(); });
+        }
+        picker.click();
+    });
+    panel.append(icon, title, desc, button); screenContent.appendChild(panel);
+    const groups = new Map();
+    musicLibrary.forEach((track, index) => {
+        const folder = track.folder || "Archivos agregados";
+        if (!groups.has(folder)) groups.set(folder, []);
+        groups.get(folder).push(index);
+    });
+    if (groups.size) {
+        const list = document.createElement("div"); list.className = "library-list";
+        groups.forEach((indexes, folder) => {
+            const row = document.createElement("button"); row.className = "library-track";
+            row.textContent = `📁 ${folder} · ${indexes.length} canciones`;
+            row.addEventListener("click", () => renderGroupTracks(folder, indexes, "carpetas"));
+            list.appendChild(row);
+        });
+        screenContent.appendChild(list);
+    }
+}
+
+function renderSearchResults(query) {
+    if (!screenContent) return;
+    const q = query.trim().toLocaleLowerCase();
+    if (!q) { renderSimpleScreen("Buscar música", "Escribe el nombre de una canción, artista o álbum."); return; }
+    const matches = musicLibrary.map((track,index) => ({track,index})).filter(({track}) =>
+        [track.name, track.artist, track.album, track.folder].some(value => String(value || "").toLocaleLowerCase().includes(q)));
+    screenContent.innerHTML = "";
+    if (!matches.length) { renderSimpleScreen("Sin resultados", "No encontramos coincidencias."); return; }
+    const list = document.createElement("div"); list.className = "library-list";
+    matches.forEach(({track,index}) => {
+        const row = document.createElement("button"); row.className = "library-track";
+        const info = document.createElement("span"); info.className = "library-track-info";
+        const name = document.createElement("span"); name.className = "library-track-title"; name.textContent = track.name;
+        const meta = document.createElement("span"); meta.className = "library-track-artist"; meta.textContent = `${track.artist} · ${track.album}`;
+        info.append(name,meta); row.append(info);
+        row.addEventListener("click", () => { navigate("inicio"); loadTrack(index,true); });
+        list.appendChild(row);
+    });
+    screenContent.appendChild(list);
 }
 
 function renderSimpleScreen(title, description) {
@@ -1382,6 +1471,21 @@ libraryTabs.forEach(button => {
     button.addEventListener("click", () => {
         selectLibraryTab(button.dataset.libraryTab);
     });
+});
+
+/* BÚSQUEDA GLOBAL */
+const searchBtn = $("searchBtn");
+const searchPanel = $("searchPanel");
+const searchInput = $("searchInput");
+if (searchBtn && searchPanel) searchBtn.addEventListener("click", () => {
+    searchPanel.hidden = !searchPanel.hidden;
+    if (!searchPanel.hidden) searchInput?.focus();
+});
+if (searchInput) searchInput.addEventListener("input", () => {
+    navigate("biblioteca");
+    currentLibraryTab = "canciones";
+    libraryTabs.forEach(tab => tab.classList.toggle("active", tab.dataset.libraryTab === "canciones"));
+    renderSearchResults(searchInput.value);
 });
 
 /* =========================================
