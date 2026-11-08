@@ -107,6 +107,31 @@ jobs:
           print('AndroidManifest.xml válido; permisos de audio configurados.')
           PY
 
+      - name: Configurar Google Play Billing (Premium)
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          gradle = Path('android/app/build.gradle')
+          text = gradle.read_text(encoding='utf-8')
+          dependencies = [
+              "    implementation 'com.android.billingclient:billing:7.1.1'",
+              "    implementation 'com.google.android.gms:play-services-ads:23.6.0'"
+          ]
+          marker = 'dependencies {'
+          if marker not in text:
+              raise SystemExit('No se encontró el bloque dependencies en android/app/build.gradle')
+          changed = False
+          for dependency in dependencies:
+              artifact = dependency.split(':')[1]
+              if artifact not in text:
+                  text = text.replace(marker, marker + '\n' + dependency, 1)
+                  changed = True
+          if changed:
+              gradle.write_text(text, encoding='utf-8')
+          print('Google Play Billing y Google Mobile Ads configurados.')
+          PY
+
       - name: Usar siempre la misma firma de depuración
         run: |
           # Con la misma firma, cada APK nuevo se instala encima del anterior
