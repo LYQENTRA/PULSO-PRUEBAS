@@ -39,7 +39,7 @@ public class PulsoAdsPlugin extends Plugin {
         ensureInitialized(() -> {
             Activity activity = getActivity();
             if (activity == null || activity.isFinishing()) { call.resolve(); return; }
-            AppOpenAd.load(getContext(), APP_OPEN_TEST_ID, new AdRequest.Builder().build(),
+            activity.runOnUiThread(() -> AppOpenAd.load(getContext(), APP_OPEN_TEST_ID, new AdRequest.Builder().build(),
                 new AppOpenAd.AppOpenAdLoadCallback() {
                     @Override public void onAdLoaded(AppOpenAd ad) {
                         activity.runOnUiThread(() -> {
@@ -51,7 +51,7 @@ public class PulsoAdsPlugin extends Plugin {
                         });
                     }
                     @Override public void onAdFailedToLoad(LoadAdError error) { call.resolve(); }
-                });
+                }));
         }, call);
     }
 
@@ -59,7 +59,7 @@ public class PulsoAdsPlugin extends Plugin {
         ensureInitialized(() -> {
             Activity activity = getActivity();
             if (activity == null || activity.isFinishing()) { call.resolve(); return; }
-            InterstitialAd.load(getContext(), INTERSTITIAL_TEST_ID, new AdRequest.Builder().build(),
+            activity.runOnUiThread(() -> InterstitialAd.load(getContext(), INTERSTITIAL_TEST_ID, new AdRequest.Builder().build(),
                 new InterstitialAdLoadCallback() {
                     @Override public void onAdLoaded(InterstitialAd ad) {
                         activity.runOnUiThread(() -> {
@@ -71,7 +71,7 @@ public class PulsoAdsPlugin extends Plugin {
                         });
                     }
                     @Override public void onAdFailedToLoad(LoadAdError error) { call.resolve(); }
-                });
+                }));
         }, call);
     }
 }
