@@ -10,7 +10,6 @@ import com.android.billingclient.api.ProductDetails;
 import com.android.billingclient.api.Purchase;
 import com.android.billingclient.api.PurchasesUpdatedListener;
 import com.android.billingclient.api.QueryProductDetailsParams;
-import com.android.billingclient.api.QueryProductDetailsResult;
 import com.android.billingclient.api.QueryPurchasesParams;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -75,8 +74,7 @@ public class PulsoBillingPlugin extends Plugin implements PurchasesUpdatedListen
                         .setProductType(BillingClient.ProductType.INAPP)
                         .build()))
                 .build();
-            billingClient.queryProductDetailsAsync(params, (result, detailsResult) -> {
-                List<ProductDetails> details = detailsResult == null ? null : detailsResult.getProductDetailsList();
+            billingClient.queryProductDetailsAsync(params, (result, details) -> {
                 if (result.getResponseCode() != BillingClient.BillingResponseCode.OK || details == null || details.isEmpty()) {
                     call.reject("PULSO Premium todavía no está configurado en Google Play.");
                     return;
