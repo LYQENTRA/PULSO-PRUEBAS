@@ -78,6 +78,9 @@ let nativeStateBusy = false;
 let nativeVisualizerBusy = false;
 let nativePlayRequestedAt = 0;
 let nativeVisualizerGranted = true;
+let nativeVisualizerActive = true;
+let nativeInactiveSince = 0;
+const barLevels = [];
 let progressDragging = false;
 const nativeNoticeShown = {};
 
@@ -1154,7 +1157,6 @@ function animateVisualizer() {
         const count = bars.length;
 
         const usingNative = isNativeTrack();
-        const syntheticBars = usingNative && isPlaying && !nativeVisualizerGranted;
         if (!usingNative && analyser && frequencyData && isPlaying) { analyser.getByteFrequencyData(frequencyData); }
 
         bars.forEach((bar, index) => {
@@ -1165,11 +1167,7 @@ function animateVisualizer() {
                 : index / Math.max(1, count - 1);
 
             let level = 0;
-            if (syntheticBars) {
-                // Sin permiso para leer el espectro, las barras se mueven con un efecto suave.
-                const t = performance.now() / 1000;
-                level = Math.max(0, 0.3 + 0.22 * Math.sin(t * 3.2 + index * 0.55) + 0.12 * Math.sin(t * 1.7 + index * 0.21));
-            } else if (usingNative && isPlaying && nativeFrequencyData.length) {
+            if (usingNative && isPlaying && nativeFrequencyData.length) {
                 const bin = Math.min(nativeFrequencyData.length - 1, Math.floor(samplePosition * (nativeFrequencyData.length - 1)));
                 level = Math.pow((nativeFrequencyData[bin] || 0) / 255, 0.78);
             } else if (analyser && frequencyData && isPlaying) {
@@ -1192,6 +1190,13 @@ function animateVisualizer() {
                 const rawLevel = samples ? totalEnergy / samples / 255 : 0;
                 level = Math.pow(rawLevel, 0.78);
             }
+
+            // Subida rápida y caída suave: las barras siguen el golpe de la música sin temblar.
+            const previousLevel = barLevels[index] || 0;
+            level = level > previousLevel
+                ? previousLevel + (level - previousLevel) * 0.65
+                : previousLevel + (level - previousLevel) * 0.2;
+            barLevels[index] = level;
 
             const base = mode === "circular" ? 9 : 18;
             const amplitude = mode === "circular" ? 62 : 125;
@@ -1544,10 +1549,6 @@ async function ensureNativePermissions() {
     try {
         const visualizer = await PulsoNative.requestVisualizerPermission();
         nativeVisualizerGranted = visualizer?.granted !== false;
-        if (!nativeVisualizerGranted && !nativeNoticeShown.visualizer) {
-            nativeNoticeShown.visualizer = true;
-            showMessage("Sin el permiso de micrófono las barras no pueden leer la música. PULSO no graba audio: Android lo exige para el visualizador.");
-        }
     } catch (_) {}
 }
 
@@ -1589,11 +1590,32 @@ async function syncNativeState() {
     }
 }
 
+async function offerVisualizerFix() {
+    if (nativeNoticeShown.vizFix) return;
+    nativeNoticeShown.vizFix = true;
+    const hadPermission = nativeVisualizerGranted;
+    let granted = false;
+    try { granted = (await PulsoNative.requestVisualizerPermission())?.granted === true; } catch (_) {}
+    nativeVisualizerGranted = granted;
+    if (!granted) {
+        const open = window.confirm("Para que las barras se muevan con la música, Android pide el permiso de Micrófono. PULSO no graba audio: solo lo usa para leer el sonido que reproduce.\n\n¿Abrir los ajustes para activarlo?");
+        if (open) PulsoNative.openAppSettings().catch(() => {});
+    } else if (!hadPermission) {
+        showMessage("Permiso concedido. Vuelve a reproducir la canción para activar las barras.");
+    } else {
+        showMessage("Este teléfono no permite leer el sonido para el visualizador.");
+    }
+}
+
 async function syncNativeSpectrum() {
     if (nativeVisualizerBusy || !isNativeTrack() || !isPlaying) return;
     nativeVisualizerBusy = true;
     try {
         const result = await PulsoNative.getVisualizerData();
+        nativeVisualizerActive = result?.active !== false;
+        if (nativeVisualizerActive) nativeInactiveSince = 0;
+        else if (!nativeInactiveSince) nativeInactiveSince = Date.now();
+        else if (Date.now() - nativeInactiveSince > 2500) offerVisualizerFix();
         const values = result?.spectrum || [];
         if (values.length) {
             nativeFrequencyData = Uint8Array.from(values, value => Math.max(0, Math.min(255, Number(value) || 0)));
@@ -1607,7 +1629,7 @@ async function syncNativeSpectrum() {
 function startNativeStatePolling() {
     if (!isNativeAndroid) return;
     if (!nativeStateTimer) nativeStateTimer = setInterval(syncNativeState, 250);
-    if (!nativeVisualizerTimer) nativeVisualizerTimer = setInterval(syncNativeSpectrum, 80);
+    if (!nativeVisualizerTimer) nativeVisualizerTimer = setInterval(syncNativeSpectrum, 50);
 }
 
 function stopNativeStatePolling() {
@@ -1851,8 +1873,10 @@ async function initAds() {
         }
 
         await AdMob.initialize({ initializeForTesting: Boolean(config.useTestAds) });
-        AdMob.addListener("bannerAdSizeChanged", size => setAdSpace(size?.height));
-        AdMob.addListener("bannerAdFailedToLoad", () => setAdSpace(0));
+        let adSizeKnown = false;
+        let adFailed = false;
+        AdMob.addListener("bannerAdSizeChanged", size => { adSizeKnown = true; setAdSpace(size?.height); });
+        AdMob.addListener("bannerAdFailedToLoad", () => { adFailed = true; setAdSpace(0); });
         await AdMob.showBanner({
             adId: config.bannerId,
             adSize: "ADAPTIVE_BANNER",
@@ -1860,6 +1884,8 @@ async function initAds() {
             margin: 0,
             isTesting: Boolean(config.useTestAds)
         });
+        // Si el plugin no informa la altura, se reserva un espacio estándar para el banner.
+        setTimeout(() => { if (!adSizeKnown && !adFailed) setAdSpace(60); }, 3000);
     } catch (error) {
         console.warn("No se pudo mostrar el anuncio:", error);
         setAdSpace(0);
@@ -1890,6 +1916,15 @@ function initializePulso() {
     if (isNativeAndroid) {
         startNativeStatePolling();
         initAds();
+        const visualStage = document.querySelector(".visual-stage");
+        if (visualStage) {
+            visualStage.addEventListener("click", () => {
+                if (isNativeTrack() && isPlaying && !nativeVisualizerActive) {
+                    nativeNoticeShown.vizFix = false;
+                    offerVisualizerFix();
+                }
+            });
+        }
         PulsoNative.hasAudioPermission().then(result => {
             if (result?.granted) scanNativeLibrary();
         }).catch(() => {});

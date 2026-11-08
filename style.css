@@ -1668,3 +1668,12 @@ button:disabled {
 body {
   padding-bottom: var(--ad-space, 0px);
 }
+
+/* El banner de anuncios tapaba el pie del menú y los avisos */
+.drawer {
+  padding-bottom: calc(30px + var(--ad-space, 0px));
+}
+
+.toast {
+  bottom: calc(25px + var(--ad-space, 0px));
+}
