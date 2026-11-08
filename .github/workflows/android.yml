@@ -9,6 +9,14 @@ on:
 permissions:
   contents: read
 
+env:
+  # Anuncios de Google AdMob. Estos son los IDs de PRUEBA de Google: son seguros para probar.
+  # Para usar los tuyos, crea en GitHub (Settings -> Secrets and variables -> Actions -> Variables)
+  # las variables ADMOB_APP_ID, ADMOB_BANNER_ID y ADMOB_USE_TEST_ADS (pon false para anuncios reales).
+  ADMOB_APP_ID: ${{ vars.ADMOB_APP_ID || 'ca-app-pub-3940256099942544~3347511713' }}
+  ADMOB_BANNER_ID: ${{ vars.ADMOB_BANNER_ID || 'ca-app-pub-3940256099942544/6300978111' }}
+  ADMOB_USE_TEST_ADS: ${{ vars.ADMOB_USE_TEST_ADS || 'true' }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -60,7 +68,9 @@ jobs:
               'android.permission.FOREGROUND_SERVICE',
               'android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK',
               'android.permission.POST_NOTIFICATIONS',
-              'android.permission.RECORD_AUDIO'
+              'android.permission.RECORD_AUDIO',
+              'android.permission.WAKE_LOCK',
+              'com.google.android.gms.permission.AD_ID'
           ]
           additions = []
           if permissions[0] not in text:
@@ -78,6 +88,14 @@ jobs:
               service = '\n        <service android:name="com.lyqentra.pulso.PulsoPlaybackService" android:exported="false" android:foregroundServiceType="mediaPlayback" />'
               text = text[:app_match.end()] + service + text[app_match.end():]
 
+          # ID de la app de AdMob: sin esta etiqueta la app se cierra al abrir.
+          import os
+          admob_app_id = os.environ.get('ADMOB_APP_ID', '').strip()
+          if admob_app_id and 'com.google.android.gms.ads.APPLICATION_ID' not in text:
+              app_match = re.search(r'<application\b[^>]*>', text)
+              meta = f'\n        <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="{admob_app_id}" />'
+              text = text[:app_match.end()] + meta + text[app_match.end():]
+
           if additions:
               insert_at = match.end()
               text = text[:insert_at] + '\n' + '\n'.join(additions) + text[insert_at:]
@@ -88,6 +106,13 @@ jobs:
           ET.parse(manifest)
           print('AndroidManifest.xml válido; permisos de audio configurados.')
           PY
+
+      - name: Usar siempre la misma firma de depuración
+        run: |
+          # Con la misma firma, cada APK nuevo se instala encima del anterior
+          # sin desinstalar (se conservan permisos y favoritos).
+          mkdir -p ~/.android
+          cp native/android/debug.keystore ~/.android/debug.keystore
 
       - name: Compilar APK debug
         run: |
