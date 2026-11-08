@@ -74,6 +74,17 @@ const isNativeAndroid = Boolean(PulsoNative);
 let nativeStateTimer = null;
 let nativeVisualizerTimer = null;
 let nativeFrequencyData = new Uint8Array(64);
+let nativeStateBusy = false;
+let nativeVisualizerBusy = false;
+let nativePlayRequestedAt = 0;
+let nativeVisualizerGranted = true;
+let progressDragging = false;
+const nativeNoticeShown = {};
+
+// Verdadero solo cuando la canción actual suena por el servicio nativo de Android.
+function isNativeTrack() {
+    return isNativeAndroid && Boolean(musicLibrary[currentTrackIndex]?.native);
+}
 let librarySearchTerm = "";
 
 const audioSupported = Boolean(
@@ -316,6 +327,15 @@ function loadTrack(index, autoplay = false) {
 
     if (!track.native) { audioPlayer.src = track.url; audioPlayer.load(); } else { audioPlayer.removeAttribute("src"); audioPlayer.load(); }
 
+    if (isNativeAndroid) {
+        if (track.native) {
+            startNativeStatePolling();
+        } else {
+            pauseNativeIfPlaying();
+            stopNativeStatePolling();
+        }
+    }
+
     if (songTitle) {
         songTitle.textContent = track.name;
     }
@@ -366,8 +386,8 @@ async function playCurrentTrack() {
     try {
         if (isNativeAndroid && musicLibrary[currentTrackIndex]?.native) {
             const track = musicLibrary[currentTrackIndex];
-            try { await PulsoNative.requestNotificationPermission(); } catch (_) {}
-            try { await PulsoNative.requestVisualizerPermission(); } catch (_) {}
+            await ensureNativePermissions();
+            nativePlayRequestedAt = Date.now();
             await PulsoNative.playInBackground({ uri: track.url, title: track.name, artist: track.artist });
             isPlaying = true; updatePlayButton(); updateVinylRotation(); startNativeStatePolling(); return;
         }
@@ -379,10 +399,22 @@ async function playCurrentTrack() {
     }
 }
 
-function togglePlayback() {
-    if (isNativeAndroid && musicLibrary[currentTrackIndex]?.native) {
-        PulsoNative.playbackControl({ action: isPlaying ? "pause" : "resume" });
-        isPlaying = !isPlaying; updatePlayButton(); updateVinylRotation(); return;
+async function togglePlayback() {
+    if (isNativeTrack()) {
+        if (isPlaying) {
+            PulsoNative.playbackControl({ action: "pause" });
+            isPlaying = false; updatePlayButton(); updateVinylRotation();
+            return;
+        }
+        // Si el servicio ya no tiene la canción cargada (Android cerró la app), se inicia de nuevo.
+        let state = null;
+        try { state = await PulsoNative.getPlaybackState(); } catch (_) {}
+        if (!state || !(Number(state.duration) > 0)) { playCurrentTrack(); return; }
+        nativePlayRequestedAt = Date.now();
+        PulsoNative.playbackControl({ action: "resume" });
+        isPlaying = true; updatePlayButton(); updateVinylRotation();
+        startNativeStatePolling();
+        return;
     }
     if (!audioPlayer) return;
     if (audioPlayer.paused) {
@@ -872,6 +904,13 @@ function renderSettings() {
             </div>
         </div>
 
+        ${isNativeAndroid ? `
+        <div class="settings-section">
+            <h3>Segundo plano</h3>
+            <button type="button" class="library-add-btn" id="openNotifSettings">Abrir ajustes de notificaciones</button>
+            <p class="equalizer-note">Si la música se corta con la pantalla apagada, en los ajustes de Android pon la batería de PULSO en «Sin restricciones».</p>
+        </div>` : ""}
+
         <div class="settings-section">
             <h3>Acerca de PULSO</h3>
             <div class="settings-option">
@@ -888,6 +927,13 @@ function renderSettings() {
             </div>
         </div>
     `;
+
+    const notifSettingsBtn = screenContent.querySelector("#openNotifSettings");
+    if (notifSettingsBtn) {
+        notifSettingsBtn.addEventListener("click", () => {
+            PulsoNative.openNotificationSettings().catch(() => showMessage("No se pudieron abrir los ajustes."));
+        });
+    }
 
     const modeButtons = screenContent.querySelectorAll("[data-visual-mode]");
 
@@ -918,7 +964,9 @@ function setupAudioAnalyser() {
     const AudioContextClass =
         window.AudioContext || window.webkitAudioContext;
 
-    if (!AudioContextClass || !audioPlayer) {
+    // En la app Android la música sale por el servicio nativo. Pasar el audio por
+    // Web Audio dentro del WebView provoca estática cuando la app queda en segundo plano.
+    if (isNativeAndroid || !AudioContextClass || !audioPlayer) {
         return;
     }
 
@@ -1050,7 +1098,7 @@ function renderEqualizer() {
     });
     panel.appendChild(reset);
     screenContent.appendChild(panel);
-    if (!audioContext) showMessage("Reproduce una canción para activar los controles de sonido.");
+    if (!audioContext && !isNativeAndroid) showMessage("Reproduce una canción para activar los controles de sonido.");
 }
 
 /* =========================================
@@ -1105,7 +1153,9 @@ function animateVisualizer() {
         const mode = stage.dataset.visualMode || "circular";
         const count = bars.length;
 
-        if (analyser && frequencyData && isPlaying) { analyser.getByteFrequencyData(frequencyData); }
+        const usingNative = isNativeTrack();
+        const syntheticBars = usingNative && isPlaying && !nativeVisualizerGranted;
+        if (!usingNative && analyser && frequencyData && isPlaying) { analyser.getByteFrequencyData(frequencyData); }
 
         bars.forEach((bar, index) => {
             const isMirror = mode === "mirror";
@@ -1115,7 +1165,11 @@ function animateVisualizer() {
                 : index / Math.max(1, count - 1);
 
             let level = 0;
-            if (isNativeAndroid && isPlaying && nativeFrequencyData.length) {
+            if (syntheticBars) {
+                // Sin permiso para leer el espectro, las barras se mueven con un efecto suave.
+                const t = performance.now() / 1000;
+                level = Math.max(0, 0.3 + 0.22 * Math.sin(t * 3.2 + index * 0.55) + 0.12 * Math.sin(t * 1.7 + index * 0.21));
+            } else if (usingNative && isPlaying && nativeFrequencyData.length) {
                 const bin = Math.min(nativeFrequencyData.length - 1, Math.floor(samplePosition * (nativeFrequencyData.length - 1)));
                 level = Math.pow((nativeFrequencyData[bin] || 0) / 255, 0.78);
             } else if (analyser && frequencyData && isPlaying) {
@@ -1279,6 +1333,12 @@ if (progressBar) {
     });
 }
 
+if (progressBar) {
+    progressBar.addEventListener("pointerdown", () => { progressDragging = true; });
+    ["pointerup", "pointercancel", "change", "blur"].forEach(name =>
+        progressBar.addEventListener(name, () => { progressDragging = false; }));
+}
+
 /* =========================================
    FAVORITO DE LA CANCIÓN ACTUAL
 ========================================= */
@@ -1396,6 +1456,9 @@ if (repeatBtn) {
 
 if (addMusicBtn && musicFileInput) {
     addMusicBtn.addEventListener("click", () => {
+        // En la app Android la música se lee de la biblioteca del teléfono para que suene en
+        // segundo plano y con controles en la notificación. El selector de archivos solo se usa en la web.
+        if (isNativeAndroid) { scanNativeLibrary(); return; }
         musicFileInput.click();
     });
 }
@@ -1470,15 +1533,110 @@ const searchBtn = $("searchBtn"), searchPanel = $("searchPanel"), searchInput = 
 if (searchBtn && searchPanel) searchBtn.addEventListener("click",()=>{searchPanel.hidden=!searchPanel.hidden;if(!searchPanel.hidden)searchInput?.focus();});
 if (searchInput) searchInput.addEventListener("input",()=>{librarySearchTerm=searchInput.value.trim().toLocaleLowerCase();if(currentScreen!=="biblioteca")navigate("biblioteca");else renderLibrary();});
 
-function startNativeStatePolling(){
-    if(!isNativeAndroid) return;
-    if(!nativeStateTimer) nativeStateTimer=setInterval(async()=>{try{const s=await PulsoNative.getPlaybackState();isPlaying=!!s.playing;updatePlayButton();updateVinylRotation();if(currentTime)currentTime.textContent=formatTime((s.position||0)/1000);if(totalTime)totalTime.textContent=formatTime((s.duration||0)/1000);if(progressBar&&s.duration)progressBar.value=(s.position/s.duration)*100;}catch(e){}},200);
-    if(!nativeVisualizerTimer) nativeVisualizerTimer=setInterval(async()=>{try{const result=await PulsoNative.getVisualizerData();const values=result?.spectrum||[];if(values.length)nativeFrequencyData=Uint8Array.from(values.map(v=>Math.max(0,Math.min(255,Number(v)||0))));}catch(e){}},80);
+async function ensureNativePermissions() {
+    try {
+        const notifications = await PulsoNative.requestNotificationPermission();
+        if (notifications?.granted === false && !nativeNoticeShown.notifications) {
+            nativeNoticeShown.notifications = true;
+            showMessage("Activa las notificaciones de PULSO (Menú → Ajustes) para ver los controles en la barra y en la pantalla de bloqueo.");
+        }
+    } catch (_) {}
+    try {
+        const visualizer = await PulsoNative.requestVisualizerPermission();
+        nativeVisualizerGranted = visualizer?.granted !== false;
+        if (!nativeVisualizerGranted && !nativeNoticeShown.visualizer) {
+            nativeNoticeShown.visualizer = true;
+            showMessage("Sin el permiso de micrófono las barras no pueden leer la música. PULSO no graba audio: Android lo exige para el visualizador.");
+        }
+    } catch (_) {}
 }
+
+function pauseNativeIfPlaying() {
+    if (!isNativeAndroid) return;
+    PulsoNative.getPlaybackState().then(state => {
+        if (state?.playing) PulsoNative.playbackControl({ action: "pause" });
+    }).catch(() => {});
+}
+
+async function syncNativeState() {
+    if (nativeStateBusy || !isNativeTrack()) return;
+    nativeStateBusy = true;
+    try {
+        const state = await PulsoNative.getPlaybackState();
+        if (!isNativeTrack()) return;
+        const track = musicLibrary[currentTrackIndex];
+        const playingNow = Boolean(state.playing);
+        const justRequested = Date.now() - nativePlayRequestedAt < 2500;
+
+        // Mientras Android prepara la canción, no se devuelve el botón a "Reproducir".
+        if (playingNow || !justRequested) {
+            if (isPlaying !== playingNow) {
+                isPlaying = playingNow;
+                updatePlayButton();
+                updateVinylRotation();
+            }
+        }
+
+        const total = Number(state.duration) > 0 ? Number(state.duration) : (track.duration || 0) * 1000;
+        const position = Math.max(0, Number(state.position) || 0);
+        if (currentTime && (playingNow || !justRequested)) currentTime.textContent = formatTime(position / 1000);
+        if (totalTime) totalTime.textContent = formatTime(total / 1000);
+        if (progressBar && total > 0 && !progressDragging) progressBar.value = Math.min(100, (position / total) * 100);
+    } catch (error) {
+        console.warn("No se pudo leer el estado de reproducción:", error);
+    } finally {
+        nativeStateBusy = false;
+    }
+}
+
+async function syncNativeSpectrum() {
+    if (nativeVisualizerBusy || !isNativeTrack() || !isPlaying) return;
+    nativeVisualizerBusy = true;
+    try {
+        const result = await PulsoNative.getVisualizerData();
+        const values = result?.spectrum || [];
+        if (values.length) {
+            nativeFrequencyData = Uint8Array.from(values, value => Math.max(0, Math.min(255, Number(value) || 0)));
+        }
+    } catch (_) {
+    } finally {
+        nativeVisualizerBusy = false;
+    }
+}
+
+function startNativeStatePolling() {
+    if (!isNativeAndroid) return;
+    if (!nativeStateTimer) nativeStateTimer = setInterval(syncNativeState, 250);
+    if (!nativeVisualizerTimer) nativeVisualizerTimer = setInterval(syncNativeSpectrum, 80);
+}
+
+function stopNativeStatePolling() {
+    clearInterval(nativeStateTimer);
+    clearInterval(nativeVisualizerTimer);
+    nativeStateTimer = null;
+    nativeVisualizerTimer = null;
+    nativeFrequencyData = new Uint8Array(64);
+}
+
+// Con la app en segundo plano no hace falta consultar el estado; al volver se sincroniza de inmediato.
+document.addEventListener("visibilitychange", () => {
+    if (!isNativeAndroid) return;
+    if (document.hidden) {
+        stopNativeStatePolling();
+    } else if (isNativeTrack()) {
+        startNativeStatePolling();
+        syncNativeState();
+    }
+});
+
 if (isNativeAndroid) {
     PulsoNative.addListener("mediaNext", playNextTrack);
     PulsoNative.addListener("mediaPrevious", playPreviousTrack);
-    PulsoNative.addListener("mediaEnded", () => { if (repeatMode === 2) PulsoNative.playbackControl({action:"seek",position:0}); else playNextTrack(); });
+    PulsoNative.addListener("mediaEnded", () => { if (repeatMode === 2) playCurrentTrack(); else playNextTrack(); });
+    PulsoNative.addListener("mediaError", () => {
+        isPlaying = false; updatePlayButton(); updateVinylRotation();
+        showMessage("No se pudo reproducir esta canción. Prueba con otra o actualiza la biblioteca.");
+    });
 }
 
 /* =========================================
@@ -1668,6 +1826,46 @@ if (queueToggle) queueToggle.addEventListener("click", () => {
    INICIALIZACIÓN
 ========================================= */
 
+/* =========================================
+   ANUNCIOS (GOOGLE ADMOB)
+========================================= */
+
+function setAdSpace(height) {
+    const value = Math.max(0, Math.round(Number(height) || 0));
+    document.documentElement.style.setProperty("--ad-space", `${value}px`);
+}
+
+async function initAds() {
+    const config = window.PULSO_ADS;
+    const AdMob = window.Capacitor?.Plugins?.AdMob;
+    if (!config?.enabled || !config.bannerId || !isNativeAndroid || !AdMob) return;
+
+    try {
+        try {
+            const consent = await AdMob.requestConsentInfo();
+            if (consent?.isConsentFormAvailable && consent.status === "REQUIRED") {
+                await AdMob.showConsentForm();
+            }
+        } catch (error) {
+            console.warn("Consentimiento de anuncios:", error);
+        }
+
+        await AdMob.initialize({ initializeForTesting: Boolean(config.useTestAds) });
+        AdMob.addListener("bannerAdSizeChanged", size => setAdSpace(size?.height));
+        AdMob.addListener("bannerAdFailedToLoad", () => setAdSpace(0));
+        await AdMob.showBanner({
+            adId: config.bannerId,
+            adSize: "ADAPTIVE_BANNER",
+            position: "BOTTOM_CENTER",
+            margin: 0,
+            isTesting: Boolean(config.useTestAds)
+        });
+    } catch (error) {
+        console.warn("No se pudo mostrar el anuncio:", error);
+        setAdSpace(0);
+    }
+}
+
 function initializePulso() {
     restorePulsoState();
     navigate("inicio");
@@ -1691,6 +1889,7 @@ function initializePulso() {
     console.log("PULSO iniciado correctamente.");
     if (isNativeAndroid) {
         startNativeStatePolling();
+        initAds();
         PulsoNative.hasAudioPermission().then(result => {
             if (result?.granted) scanNativeLibrary();
         }).catch(() => {});

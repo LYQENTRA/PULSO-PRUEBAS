@@ -19,3 +19,23 @@ En GitHub: Actions → Build PULSO Android APK → Run workflow. El APK debug se
 ## Puente nativo inicial
 
 El plugin `PulsoMedia` ofrece `requestAudioPermission()` y `scanAudio()`. `scanAudio()` devuelve metadatos y URI `content://` de los archivos de audio indexados por Android MediaStore. La integración de esas URI con el reproductor web y la reproducción en segundo plano es una siguiente fase; no se considera terminada en este scaffold.
+
+## Cambios de esta versión
+
+**Correcciones**
+- El sondeo del estado nativo ya no pisa el estado de las canciones que suenan por el reproductor web: antes congelaba el tiempo, paraba el vinilo y dejaba las barras planas. Ahora solo actúa cuando la canción actual suena por el servicio nativo.
+- En la app Android se desactiva el procesamiento Web Audio (causa de la estática en segundo plano).
+- "Agregar música" en la app Android lee la biblioteca del teléfono, para que todo suene por el servicio nativo con notificación y controles en la pantalla de bloqueo.
+- El servicio mantiene la CPU despierta con la pantalla apagada (`setWakeMode` y permiso `WAKE_LOCK`).
+- Avisos claros si se niegan los permisos de notificaciones o de micrófono (este último lo exige Android para el visualizador; PULSO no graba audio). Nuevo botón en Ajustes para abrir los ajustes de notificaciones.
+- "Repetir una canción" ahora reinicia la canción en Android.
+- Los errores de reproducción nativos ahora muestran un mensaje.
+
+**Anuncios (Google AdMob)**
+- Banner adaptable en la parte inferior, con el plugin `@capacitor-community/admob`.
+- Por defecto usa los IDs de PRUEBA de Google. Para usar los tuyos, crea en GitHub (Settings → Secrets and variables → Actions → Variables) `ADMOB_APP_ID`, `ADMOB_BANNER_ID` y `ADMOB_USE_TEST_ADS` (`false` para anuncios reales).
+- Nunca toques tus propios anuncios reales: Google puede suspender la cuenta. Usa el modo prueba mientras desarrollas.
+- Antes de publicar en Play Store: política de privacidad, formulario de seguridad de datos y mensaje de consentimiento (GDPR) configurado en AdMob.
+
+**Firma de depuración fija**
+- `native/android/debug.keystore` se usa en cada compilación, para que cada APK se instale encima del anterior sin desinstalar. Es solo para pruebas; no sirve para publicar en Play Store.
