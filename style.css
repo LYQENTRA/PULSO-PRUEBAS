@@ -1677,3 +1677,13 @@ body {
 .toast {
   bottom: calc(25px + var(--ad-space, 0px));
 }
+
+
+/* PULSO PREMIUM — compra única opcional */
+.premium-panel { margin-top: 22px; padding: 18px; border: 1px solid rgba(57,255,20,.28); border-radius: 16px; background: linear-gradient(145deg, rgba(57,255,20,.08), rgba(255,255,255,.025)); }
+.premium-kicker { color: #39ff14; font-size: 10px; letter-spacing: .18em; font-weight: 800; }
+.premium-panel h3 { margin: 5px 0 7px; }
+.premium-panel p { color: #aaa; font-size: 12px; line-height: 1.5; }
+.premium-button { width: 100%; margin-top: 10px; padding: 12px 14px; border: 0; border-radius: 10px; background: #39ff14; color: #071006; font-weight: 800; }
+.premium-button:disabled { opacity: .55; }
+.premium-status { margin-bottom: 0; }

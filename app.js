@@ -70,6 +70,11 @@ const equalizerBands = [
 
 let animationFrame = null;
 const PulsoNative = window.Capacitor?.Plugins?.PulsoMedia || null;
+const PulsoBilling = window.Capacitor?.Plugins?.PulsoBilling || null;
+const PulsoAds = window.Capacitor?.Plugins?.PulsoAds || null;
+let lastSectionAdAt = 0;
+let appOpenAdAttempted = false;
+let pulsoPremium = false;
 const isNativeAndroid = Boolean(PulsoNative);
 let nativeStateTimer = null;
 let nativeVisualizerTimer = null;
@@ -172,7 +177,13 @@ function getTrackName(file) {
 ========================================= */
 
 function navigate(screen) {
+    const previousScreen = currentScreen;
     currentScreen = screen;
+    // Intersticial de prueba: solo al entrar a otra sección y con límite de frecuencia.
+    // Nunca se muestra encima del reproductor ni al volver desde segundo plano.
+    if (isNativeAndroid && !pulsoPremium && screen !== "inicio" && screen !== previousScreen) {
+        maybeShowSectionAd();
+    }
 
     if (playerScreen) {
         playerScreen.hidden = screen !== "inicio";
@@ -372,13 +383,6 @@ function loadTrack(index, autoplay = false) {
    REPRODUCIR Y PAUSAR
 ========================================= */
 
-async function syncNativeQueue(currentIndex = currentTrackIndex) {
-    if (!isNativeAndroid || !PulsoNative?.setNativeQueue) return;
-    const uris = playbackQueue.map(i => musicLibrary[i]).filter(t => t?.native).map(t => t.url);
-    const currentUri = musicLibrary[currentIndex]?.url || "";
-    try { await PulsoNative.setNativeQueue({ uris, currentUri }); } catch (error) { console.warn("No se pudo sincronizar la cola nativa", error); }
-}
-
 async function playCurrentTrack() {
     if (!audioPlayer) {
         return;
@@ -397,7 +401,6 @@ async function playCurrentTrack() {
         if (isNativeAndroid && musicLibrary[currentTrackIndex]?.native) {
             const track = musicLibrary[currentTrackIndex];
             await ensureNativePermissions();
-            await syncNativeQueue(currentTrackIndex);
             nativePlayRequestedAt = Date.now();
             await PulsoNative.playInBackground({ uri: track.url, title: track.name, artist: track.artist });
             isPlaying = true; updatePlayButton(); updateVinylRotation(); startNativeStatePolling(); return;
@@ -1660,19 +1663,6 @@ document.addEventListener("visibilitychange", () => {
 });
 
 if (isNativeAndroid) {
-    PulsoNative.addListener("mediaTrackChanged", event => {
-        const index = musicLibrary.findIndex(track => track.native && track.url === event.uri);
-        if (index < 0) return;
-        currentTrackIndex = index;
-        isPlaying = true;
-        const track = musicLibrary[index];
-        if (songTitle) songTitle.textContent = track.name;
-        if (songArtist) songArtist.textContent = track.artist;
-        if (currentTime) currentTime.textContent = "0:00";
-        if (totalTime) totalTime.textContent = formatTime(track.duration);
-        if (progressBar) progressBar.value = 0;
-        updatePlayButton(); updateVinylRotation(); savePulsoState();
-    });
     PulsoNative.addListener("mediaNext", playNextTrack);
     PulsoNative.addListener("mediaPrevious", playPreviousTrack);
     PulsoNative.addListener("mediaEnded", () => { if (repeatMode === 2) playCurrentTrack(); else playNextTrack(); });
@@ -1878,10 +1868,81 @@ function setAdSpace(height) {
     document.documentElement.style.setProperty("--ad-space", `${value}px`);
 }
 
+async function refreshPremiumStatus() {
+    if (!isNativeAndroid || !PulsoBilling) return false;
+    try {
+        const status = await PulsoBilling.getPremiumStatus();
+        pulsoPremium = Boolean(status?.isPremium);
+        const button = $("premiumButton");
+        const label = $("premiumStatus");
+        if (pulsoPremium) {
+            if (label) label.textContent = "Premium activo. Gracias por apoyar PULSO.";
+            if (button) { button.textContent = "PULSO Premium activo"; button.disabled = true; }
+        } else if (label) {
+            label.textContent = "Compra única. La compra se habilitará al publicar PULSO en Google Play.";
+        }
+        return pulsoPremium;
+    } catch (error) {
+        console.warn("No se pudo consultar PULSO Premium:", error);
+        return false;
+    }
+}
+
+async function openPremiumPurchase() {
+    if (!isNativeAndroid || !PulsoBilling) {
+        showMessage("PULSO Premium estará disponible en la versión de Google Play.");
+        return;
+    }
+    const button = $("premiumButton");
+    const label = $("premiumStatus");
+    if (button) button.disabled = true;
+    try {
+        const product = await PulsoBilling.getPremiumProduct();
+        const description = $("premiumDescription");
+        if (description && product?.price) description.textContent = `Compra única de ${product.price}. Sin anuncios de por vida.`;
+        const result = await PulsoBilling.purchasePremium();
+        if (result?.isPremium) {
+            pulsoPremium = true;
+            if (label) label.textContent = "Premium activo. Gracias por apoyar PULSO.";
+            if (button) button.textContent = "PULSO Premium activo";
+            // Oculta el banner solo después de recibir confirmación de Google Play.
+            try { await window.Capacitor.Plugins.AdMob?.hideBanner(); } catch (_) {}
+            setAdSpace(0);
+            showMessage("¡PULSO Premium activado!");
+        }
+    } catch (error) {
+        const message = String(error?.message || error || "No se pudo completar la compra.");
+        if (label) label.textContent = message;
+        if (!message.toLowerCase().includes("cancel")) showMessage(message);
+    } finally {
+        if (button && !pulsoPremium) button.disabled = false;
+    }
+}
+
+const premiumButton = $("premiumButton");
+if (premiumButton) premiumButton.addEventListener("click", openPremiumPurchase);
+
+async function showAppOpenTestAd() {
+    if (appOpenAdAttempted || pulsoPremium || !isNativeAndroid || !PulsoAds) return;
+    appOpenAdAttempted = true;
+    try { await PulsoAds.showAppOpenAd(); }
+    catch (error) { console.warn("Anuncio de apertura no disponible:", error); }
+}
+
+async function maybeShowSectionAd() {
+    if (pulsoPremium || !isNativeAndroid || !PulsoAds) return;
+    const now = Date.now();
+    // Máximo un intersticial cada 8 minutos para no saturar al usuario.
+    if (now - lastSectionAdAt < 8 * 60 * 1000) return;
+    lastSectionAdAt = now;
+    try { await PulsoAds.showInterstitialAd(); }
+    catch (error) { console.warn("Anuncio de sección no disponible:", error); }
+}
+
 async function initAds() {
     const config = window.PULSO_ADS;
     const AdMob = window.Capacitor?.Plugins?.AdMob;
-    if (!config?.enabled || !config.bannerId || !isNativeAndroid || !AdMob) return;
+    if (!config?.enabled || !config.bannerId || !isNativeAndroid || !AdMob || pulsoPremium) return;
 
     try {
         try {
@@ -1894,6 +1955,8 @@ async function initAds() {
         }
 
         await AdMob.initialize({ initializeForTesting: Boolean(config.useTestAds) });
+        // Formato App Open: se intenta una sola vez en cada arranque en frío.
+        showAppOpenTestAd();
         let adSizeKnown = false;
         let adFailed = false;
         AdMob.addListener("bannerAdSizeChanged", size => { adSizeKnown = true; setAdSpace(size?.height); });
@@ -1936,7 +1999,7 @@ function initializePulso() {
     console.log("PULSO iniciado correctamente.");
     if (isNativeAndroid) {
         startNativeStatePolling();
-        initAds();
+        refreshPremiumStatus().finally(() => initAds());
         const visualStage = document.querySelector(".visual-stage");
         if (visualStage) {
             visualStage.addEventListener("click", () => {

@@ -39,3 +39,30 @@ El plugin `PulsoMedia` ofrece `requestAudioPermission()` y `scanAudio()`. `scanA
 
 **Firma de depuración fija**
 - `native/android/debug.keystore` se usa en cada compilación, para que cada APK se instale encima del anterior sin desinstalar. Es solo para pruebas; no sirve para publicar en Play Store.
+
+## PULSO Premium (preparación de compra única)
+
+- Se añadió el puente nativo `PulsoBillingPlugin` usando Google Play Billing 7.1.1.
+- ID de producto previsto: `pulso_premium_lifetime` (tipo producto integrado / compra única).
+- La app consulta las compras propiedad de la cuenta de Google Play al iniciar. Si encuentra la compra Premium confirmada, no inicializa ni muestra el banner de AdMob.
+- La compra se inicia desde Apariencia → PULSO Premium. No se crea cuenta LYQENTRA ni se solicita correo/contraseña; Google Play gestiona la cuenta compradora.
+- La restauración es automática al abrir la app con la misma cuenta de Google Play.
+- **Aún no se puede vender Premium desde el APK de prueba:** primero hay que crear `pulso_premium_lifetime` como producto de compra única en Play Console, activar el producto y distribuir una versión mediante una pista de pruebas de Google Play. La compra real debe probarse desde esa instalación, no con el APK sideloaded.
+- La verificación actual consulta el estado `PURCHASED` de Google Play Billing en el dispositivo y reconoce/acknowledge la compra. Antes de una publicación comercial se recomienda añadir validación del token en un backend seguro para reforzar la protección contra manipulación.
+- El producto se mantiene preparado pero no cambia el reproductor, el servicio de audio, la cola ni los controles multimedia.
+
+## Publicidad de prueba (AdMob)
+
+La compilación de prueba mantiene el banner adaptativo y añade:
+
+- Anuncio de apertura (App Open) al iniciar PULSO en frío.
+- Anuncio intersticial al entrar a otra sección, con un límite de uno cada 8 minutos.
+- Los anuncios adicionales usan exclusivamente IDs oficiales de prueba de Google.
+- No se muestran anuncios adicionales a usuarios con PULSO Premium activo.
+
+IDs de prueba utilizados:
+- App Open: `ca-app-pub-3940256099942544/9257395921`
+- Interstitial: `ca-app-pub-3940256099942544/1033173712`
+- Banner: `ca-app-pub-3940256099942544/6300978111`
+
+Los anuncios adicionales se implementan en `PulsoAdsPlugin.java`. El reproductor, la cola y el servicio multimedia no se modifican.
