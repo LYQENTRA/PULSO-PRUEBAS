@@ -35,9 +35,10 @@ public class PulsoMediaPlugin extends Plugin {
             if ("com.lyqentra.pulso.NATIVE_NEXT".equals(action)) notifyListeners("mediaNext", data);
             else if ("com.lyqentra.pulso.NATIVE_PREVIOUS".equals(action)) notifyListeners("mediaPrevious", data);
             else if ("com.lyqentra.pulso.NATIVE_ENDED".equals(action)) notifyListeners("mediaEnded", data);
+            else if ("com.lyqentra.pulso.NATIVE_TRACK_CHANGED".equals(action)) { data.put("uri", i.getStringExtra("uri")); notifyListeners("mediaTrackChanged", data); }
             else if ("com.lyqentra.pulso.NATIVE_ERROR".equals(action)) notifyListeners("mediaError", data);
         }};
-        IntentFilter f = new IntentFilter(); f.addAction("com.lyqentra.pulso.NATIVE_NEXT"); f.addAction("com.lyqentra.pulso.NATIVE_PREVIOUS"); f.addAction("com.lyqentra.pulso.NATIVE_ENDED"); f.addAction("com.lyqentra.pulso.NATIVE_ERROR");
+        IntentFilter f = new IntentFilter(); f.addAction("com.lyqentra.pulso.NATIVE_NEXT"); f.addAction("com.lyqentra.pulso.NATIVE_PREVIOUS"); f.addAction("com.lyqentra.pulso.NATIVE_ENDED"); f.addAction("com.lyqentra.pulso.NATIVE_TRACK_CHANGED"); f.addAction("com.lyqentra.pulso.NATIVE_ERROR");
         if (Build.VERSION.SDK_INT >= 33) getContext().registerReceiver(mediaReceiver, f, android.content.Context.RECEIVER_NOT_EXPORTED); else getContext().registerReceiver(mediaReceiver, f);
     }
 
@@ -189,6 +190,20 @@ public class PulsoMediaPlugin extends Plugin {
         } catch (Exception error) {
             call.reject("No se pudo leer la biblioteca musical", error);
         }
+    }
+
+    @PluginMethod public void setNativeQueue(PluginCall call) {
+        try {
+            JSArray array=call.getArray("uris");
+            String[] uris=new String[array==null?0:array.length()];
+            for(int i=0;i<uris.length;i++) uris[i]=array.getString(i);
+            Intent intent=new Intent(getContext(),PulsoPlaybackService.class);
+            intent.setAction("com.lyqentra.pulso.SET_QUEUE");
+            intent.putExtra("uris",uris);
+            intent.putExtra("currentUri",call.getString("currentUri",""));
+            getContext().startService(intent);
+            JSObject out=new JSObject(); out.put("queued",uris.length); call.resolve(out);
+        } catch(Exception e) { call.reject("No se pudo sincronizar la cola nativa",e); }
     }
 
     @PluginMethod public void playInBackground(PluginCall call) {
