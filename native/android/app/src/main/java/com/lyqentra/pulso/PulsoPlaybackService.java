@@ -19,7 +19,7 @@ public class PulsoPlaybackService extends Service {
   public static final String ACTION_PLAY="com.lyqentra.pulso.PLAY", ACTION_PAUSE="com.lyqentra.pulso.PAUSE", ACTION_TOGGLE="com.lyqentra.pulso.TOGGLE", ACTION_NEXT="com.lyqentra.pulso.NEXT", ACTION_PREVIOUS="com.lyqentra.pulso.PREVIOUS", ACTION_SEEK="com.lyqentra.pulso.SEEK", ACTION_STOP="com.lyqentra.pulso.STOP";
   private static final String CHANNEL="pulso_playback";
   public static volatile PulsoPlaybackService instance; public static volatile int currentPosition=0, currentDuration=0; public static volatile boolean playing=false; private static volatile int[] savedEq={0,0,0,0,0};
-  private MediaPlayer player; private MediaSession mediaSession; private android.media.audiofx.Equalizer equalizer; private android.media.audiofx.Visualizer visualizer; private static volatile int[] spectrum = new int[64]; private String title="PULSO", artist="Reproduciendo música", uri=""; private Bitmap artwork; private int duration=0; private final Handler handler=new Handler(Looper.getMainLooper()); private final Runnable ticker=new Runnable(){public void run(){updateState();if(player!=null&&player.isPlaying())handler.postDelayed(this,500);}};
+  private MediaPlayer player; private MediaSession mediaSession; private android.media.audiofx.Equalizer equalizer; private android.media.audiofx.Visualizer visualizer; private static volatile int[] spectrum = new int[64]; private static volatile boolean visualizerActive = false; private String title="PULSO", artist="Reproduciendo música", uri=""; private Bitmap artwork; private int duration=0; private final Handler handler=new Handler(Looper.getMainLooper()); private final Runnable ticker=new Runnable(){public void run(){updateState();if(player!=null&&player.isPlaying())handler.postDelayed(this,500);}};
   @Override public void onCreate(){ super.onCreate(); instance=this; createChannel(); mediaSession=new MediaSession(this,"PULSO"); mediaSession.setCallback(new MediaSession.Callback(){
     @Override public void onPlay(){ resume(); }
     @Override public void onPause(){ pause(); }
@@ -69,23 +69,39 @@ public class PulsoPlaybackService extends Service {
       visualizer.setDataCaptureListener(new android.media.audiofx.Visualizer.OnDataCaptureListener() {
         @Override public void onWaveFormDataCapture(android.media.audiofx.Visualizer v, byte[] data, int rate) {}
         @Override public void onFftDataCapture(android.media.audiofx.Visualizer v, byte[] data, int rate) {
+          // 64 bandas en escala logarítmica (graves a agudos) para que las barras sigan el ritmo.
+          int bins = data.length / 2;
+          double top = Math.min(bins - 1, 372);
           int[] values = new int[64];
-          int usable = Math.min(data.length / 2, 64);
-          for (int i = 0; i < usable; i++) {
-            int real = data[2 * i]; int imag = data[2 * i + 1];
-            values[i] = Math.min(255, (int)(Math.sqrt(real * real + imag * imag) * 2.2));
+          for (int b = 0; b < 64; b++) {
+            int from = (int) Math.floor(Math.pow(top, b / 64.0));
+            int to = (int) Math.floor(Math.pow(top, (b + 1) / 64.0));
+            if (from < 1) from = 1;
+            if (to <= from) to = from + 1;
+            if (to > bins) to = bins;
+            double peak = 0;
+            for (int k = from; k < to; k++) {
+              int real = data[2 * k]; int imag = data[2 * k + 1];
+              double magnitude = Math.sqrt(real * real + imag * imag);
+              if (magnitude > peak) peak = magnitude;
+            }
+            double tilt = 1.0 + 2.5 * (b / 63.0);
+            values[b] = (int) Math.min(255, peak * 2.2 * tilt);
           }
           spectrum = values;
         }
-      }, android.media.audiofx.Visualizer.getMaxCaptureRate() / 2, false, true);
+      }, android.media.audiofx.Visualizer.getMaxCaptureRate(), false, true);
       visualizer.setEnabled(true);
+      visualizerActive = true;
     } catch (Exception error) { releaseVisualizer(); }
   }
   private void releaseVisualizer() {
     if (visualizer != null) { try { visualizer.setEnabled(false); visualizer.release(); } catch (Exception ignored) {} visualizer = null; }
     spectrum = new int[64];
+    visualizerActive = false;
   }
   public static int[] getSpectrum() { return spectrum.clone(); }
+  public static boolean isVisualizerActive() { return visualizerActive; }
   public JSObject getPlaybackSnapshot() {
     JSObject out = new JSObject();
     int position = currentPosition; int total = currentDuration; boolean active = playing;

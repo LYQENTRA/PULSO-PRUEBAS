@@ -79,6 +79,18 @@ public class PulsoMediaPlugin extends Plugin {
     }
 
     @PluginMethod
+    public void openAppSettings(PluginCall call) {
+        try {
+            Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + getContext().getPackageName()));
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getContext().startActivity(intent);
+            call.resolve();
+        } catch (Exception error) {
+            call.reject("No se pudieron abrir los ajustes", error);
+        }
+    }
+
+    @PluginMethod
     public void hasAudioPermission(PluginCall call) {
         String alias = Build.VERSION.SDK_INT >= 33 ? "audio" : "legacyAudio";
         JSObject result = new JSObject();
@@ -115,7 +127,7 @@ public class PulsoMediaPlugin extends Plugin {
     @PermissionCallback
     private void visualizerPermissionResult(PluginCall call) { JSObject r = new JSObject(); r.put("granted", getPermissionState("recordAudio") == PermissionState.GRANTED); call.resolve(r); }
     @PluginMethod
-    public void getVisualizerData(PluginCall call) { JSArray values = new JSArray(); for (int value : PulsoPlaybackService.getSpectrum()) values.put(value); JSObject out = new JSObject(); out.put("spectrum", values); call.resolve(out); }
+    public void getVisualizerData(PluginCall call) { JSArray values = new JSArray(); for (int value : PulsoPlaybackService.getSpectrum()) values.put(value); JSObject out = new JSObject(); out.put("spectrum", values); out.put("active", PulsoPlaybackService.isVisualizerActive()); call.resolve(out); }
 
     @PluginMethod
     public void scanAudio(PluginCall call) {
