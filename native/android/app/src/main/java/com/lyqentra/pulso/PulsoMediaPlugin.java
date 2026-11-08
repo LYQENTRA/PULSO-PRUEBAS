@@ -35,8 +35,9 @@ public class PulsoMediaPlugin extends Plugin {
             if ("com.lyqentra.pulso.NATIVE_NEXT".equals(action)) notifyListeners("mediaNext", data);
             else if ("com.lyqentra.pulso.NATIVE_PREVIOUS".equals(action)) notifyListeners("mediaPrevious", data);
             else if ("com.lyqentra.pulso.NATIVE_ENDED".equals(action)) notifyListeners("mediaEnded", data);
+            else if ("com.lyqentra.pulso.NATIVE_ERROR".equals(action)) notifyListeners("mediaError", data);
         }};
-        IntentFilter f = new IntentFilter(); f.addAction("com.lyqentra.pulso.NATIVE_NEXT"); f.addAction("com.lyqentra.pulso.NATIVE_PREVIOUS"); f.addAction("com.lyqentra.pulso.NATIVE_ENDED");
+        IntentFilter f = new IntentFilter(); f.addAction("com.lyqentra.pulso.NATIVE_NEXT"); f.addAction("com.lyqentra.pulso.NATIVE_PREVIOUS"); f.addAction("com.lyqentra.pulso.NATIVE_ENDED"); f.addAction("com.lyqentra.pulso.NATIVE_ERROR");
         if (Build.VERSION.SDK_INT >= 33) getContext().registerReceiver(mediaReceiver, f, android.content.Context.RECEIVER_NOT_EXPORTED); else getContext().registerReceiver(mediaReceiver, f);
     }
 
@@ -57,6 +58,24 @@ public class PulsoMediaPlugin extends Plugin {
         JSObject result = new JSObject();
         result.put("granted", getPermissionState("notifications") == PermissionState.GRANTED);
         call.resolve(result);
+    }
+
+    @PluginMethod
+    public void openNotificationSettings(PluginCall call) {
+        try {
+            Intent intent;
+            if (Build.VERSION.SDK_INT >= 26) {
+                intent = new Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS);
+                intent.putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, getContext().getPackageName());
+            } else {
+                intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + getContext().getPackageName()));
+            }
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getContext().startActivity(intent);
+            call.resolve();
+        } catch (Exception error) {
+            call.reject("No se pudieron abrir los ajustes", error);
+        }
     }
 
     @PluginMethod
