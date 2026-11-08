@@ -11,6 +11,8 @@ import android.database.Cursor;
 import android.media.session.*;
 import android.net.Uri;
 import android.os.*;
+import java.util.ArrayList;
+import java.util.List;
 import android.provider.Settings;
 import com.getcapacitor.JSObject;
 import androidx.annotation.Nullable;
@@ -19,14 +21,14 @@ public class PulsoPlaybackService extends Service {
   public static final String ACTION_PLAY="com.lyqentra.pulso.PLAY", ACTION_PAUSE="com.lyqentra.pulso.PAUSE", ACTION_TOGGLE="com.lyqentra.pulso.TOGGLE", ACTION_NEXT="com.lyqentra.pulso.NEXT", ACTION_PREVIOUS="com.lyqentra.pulso.PREVIOUS", ACTION_SEEK="com.lyqentra.pulso.SEEK", ACTION_STOP="com.lyqentra.pulso.STOP";
   private static final String CHANNEL="pulso_playback";
   public static volatile PulsoPlaybackService instance; public static volatile int currentPosition=0, currentDuration=0; public static volatile boolean playing=false; private static volatile int[] savedEq={0,0,0,0,0};
-  private MediaPlayer player; private MediaSession mediaSession; private android.media.audiofx.Equalizer equalizer; private android.media.audiofx.Visualizer visualizer; private static volatile int[] spectrum = new int[64]; private static volatile boolean visualizerActive = false; private String title="PULSO", artist="Reproduciendo música", uri=""; private Bitmap artwork; private int duration=0; private final Handler handler=new Handler(Looper.getMainLooper()); private final Runnable ticker=new Runnable(){public void run(){updateState();if(player!=null&&player.isPlaying())handler.postDelayed(this,500);}};
+  private MediaPlayer player; private MediaSession mediaSession; private android.media.audiofx.Equalizer equalizer; private android.media.audiofx.Visualizer visualizer; private static volatile int[] spectrum = new int[64]; private static volatile boolean visualizerActive = false; private String title="PULSO", artist="Reproduciendo música", uri=""; private final ArrayList<String> nativeQueue = new ArrayList<>(); private int nativeQueueIndex = -1; private Bitmap artwork; private int duration=0; private final Handler handler=new Handler(Looper.getMainLooper()); private final Runnable ticker=new Runnable(){public void run(){updateState();if(player!=null&&player.isPlaying())handler.postDelayed(this,500);}};
   @Override public void onCreate(){ super.onCreate(); instance=this; createChannel(); mediaSession=new MediaSession(this,"PULSO"); mediaSession.setCallback(new MediaSession.Callback(){
     @Override public void onPlay(){ resume(); }
     @Override public void onPause(){ pause(); }
     @Override public void onStop(){ stopPlayback(); }
     @Override public void onSeekTo(long pos){ seek((int)pos); }
-    @Override public void onSkipToNext(){ sendBroadcast(new Intent("com.lyqentra.pulso.NATIVE_NEXT")); }
-    @Override public void onSkipToPrevious(){ sendBroadcast(new Intent("com.lyqentra.pulso.NATIVE_PREVIOUS")); }
+    @Override public void onSkipToNext(){ playQueueStep(1); }
+    @Override public void onSkipToPrevious(){ playQueueStep(-1); }
   }); mediaSession.setFlags(MediaSession.FLAG_HANDLES_MEDIA_BUTTONS | MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS); mediaSession.setActive(false); }
   private void loadArtwork() {
     if (artwork != null && !artwork.isRecycled()) { artwork.recycle(); artwork = null; }
@@ -47,8 +49,22 @@ public class PulsoPlaybackService extends Service {
     finally { if (cursor != null) cursor.close(); }
   }
   private void createChannel(){ if(Build.VERSION.SDK_INT>=26){ NotificationChannel c=new NotificationChannel(CHANNEL,"Reproducción de PULSO",NotificationManager.IMPORTANCE_LOW); c.setDescription("Controles de reproducción de música"); ((NotificationManager)getSystemService(NOTIFICATION_SERVICE)).createNotificationChannel(c); } }
-  @Override public int onStartCommand(Intent intent,int flags,int startId){ if(intent==null)return START_STICKY; String a=intent.getAction(); if(ACTION_NEXT.equals(a)){sendBroadcast(new Intent("com.lyqentra.pulso.NATIVE_NEXT"));} else if(ACTION_PREVIOUS.equals(a)){sendBroadcast(new Intent("com.lyqentra.pulso.NATIVE_PREVIOUS"));} else if(ACTION_PLAY.equals(a)){ uri=intent.getStringExtra("uri"); title=intent.getStringExtra("title"); artist=intent.getStringExtra("artist"); startTrack(); } else if(ACTION_PAUSE.equals(a)) pause(); else if(ACTION_TOGGLE.equals(a)){ if(player!=null&&player.isPlaying())pause();else resume(); } else if(ACTION_SEEK.equals(a))seek(intent.getIntExtra("position",0)); else if(ACTION_STOP.equals(a))stopPlayback(); updateNotification(); return START_STICKY; }
-  private void startTrack(){ try{ mediaSession.setActive(true); loadArtwork(); if(player!=null){player.release();player=null;} player=new MediaPlayer(); player.setWakeMode(getApplicationContext(),PowerManager.PARTIAL_WAKE_LOCK); player.setAudioAttributes(new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build()); player.setDataSource(this,Uri.parse(uri)); player.setOnPreparedListener(mp->{duration=mp.getDuration(); currentDuration=duration; attachVisualizer(mp.getAudioSessionId()); try { if(equalizer!=null)equalizer.release(); equalizer=new android.media.audiofx.Equalizer(0,mp.getAudioSessionId()); equalizer.setEnabled(true); applyEqualizer(savedEq); } catch(Exception ignored) {} playing=true; mp.start();handler.removeCallbacks(ticker);handler.post(ticker); updateState(); updateNotification();}); player.setOnCompletionListener(mp->{updateState();sendBroadcast(new Intent("com.lyqentra.pulso.NATIVE_ENDED"));}); player.setOnErrorListener((mp,w,e)->{sendBroadcast(new Intent("com.lyqentra.pulso.NATIVE_ERROR"));return true;}); startForeground(71,buildNotification()); player.prepareAsync(); }catch(Exception e){stopForeground(true);sendBroadcast(new Intent("com.lyqentra.pulso.NATIVE_ERROR"));} }
+  @Override public int onStartCommand(Intent intent,int flags,int startId){ if(intent==null)return START_STICKY; String a=intent.getAction(); if(ACTION_NEXT.equals(a)){playQueueStep(1);} else if(ACTION_PREVIOUS.equals(a)){playQueueStep(-1);} else if("com.lyqentra.pulso.SET_QUEUE".equals(a)){String[] items=intent.getStringArrayExtra("uris"); nativeQueue.clear(); if(items!=null) for(String item:items) if(item!=null&&!item.isEmpty()) nativeQueue.add(item); String current=intent.getStringExtra("currentUri"); nativeQueueIndex=current==null?-1:nativeQueue.indexOf(current);} else if(ACTION_PLAY.equals(a)){ uri=intent.getStringExtra("uri"); title=intent.getStringExtra("title"); artist=intent.getStringExtra("artist"); startTrack(); } else if(ACTION_PAUSE.equals(a)) pause(); else if(ACTION_TOGGLE.equals(a)){ if(player!=null&&player.isPlaying())pause();else resume(); } else if(ACTION_SEEK.equals(a))seek(intent.getIntExtra("position",0)); else if(ACTION_STOP.equals(a))stopPlayback(); updateNotification(); return START_STICKY; }
+  private void startTrack(){ try{ if(uri!=null&&!uri.isEmpty()&&!nativeQueue.isEmpty()){int found=nativeQueue.indexOf(uri);if(found>=0)nativeQueueIndex=found;} mediaSession.setActive(true); loadArtwork(); if(player!=null){player.release();player=null;} player=new MediaPlayer(); player.setWakeMode(getApplicationContext(),PowerManager.PARTIAL_WAKE_LOCK); player.setAudioAttributes(new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build()); player.setDataSource(this,Uri.parse(uri)); player.setOnPreparedListener(mp->{duration=mp.getDuration(); currentDuration=duration; attachVisualizer(mp.getAudioSessionId()); try { if(equalizer!=null)equalizer.release(); equalizer=new android.media.audiofx.Equalizer(0,mp.getAudioSessionId()); equalizer.setEnabled(true); applyEqualizer(savedEq); } catch(Exception ignored) {} playing=true; mp.start();handler.removeCallbacks(ticker);handler.post(ticker); updateState(); updateNotification();}); player.setOnCompletionListener(mp->{ if(!playQueueStep(1)) { playing=false; updateState(); updateNotification(); sendBroadcast(new Intent("com.lyqentra.pulso.NATIVE_ENDED")); } }); player.setOnErrorListener((mp,w,e)->{sendBroadcast(new Intent("com.lyqentra.pulso.NATIVE_ERROR"));return true;}); startForeground(71,buildNotification()); player.prepareAsync(); }catch(Exception e){stopForeground(true);sendBroadcast(new Intent("com.lyqentra.pulso.NATIVE_ERROR"));} }
+  public void setNativeQueue(String[] items, String currentUri) { nativeQueue.clear(); if(items!=null) for(String item:items) if(item!=null&&!item.isEmpty()) nativeQueue.add(item); nativeQueueIndex=currentUri==null?-1:nativeQueue.indexOf(currentUri); }
+  private boolean playQueueStep(int direction) {
+    if(nativeQueue.isEmpty()) { sendBroadcast(new Intent(direction>0?"com.lyqentra.pulso.NATIVE_NEXT":"com.lyqentra.pulso.NATIVE_PREVIOUS")); return false; }
+    int base=nativeQueueIndex;
+    if(base<0 && uri!=null) base=nativeQueue.indexOf(uri);
+    int target=base+direction;
+    if(target<0 || target>=nativeQueue.size()) return false;
+    nativeQueueIndex=target;
+    String nextUri=nativeQueue.get(target);
+    Intent changed=new Intent("com.lyqentra.pulso.NATIVE_TRACK_CHANGED"); changed.putExtra("uri",nextUri); sendBroadcast(changed);
+    uri=nextUri; title="PULSO"; artist="";
+    try (Cursor c=getContentResolver().query(Uri.parse(uri),new String[]{MediaStore.Audio.Media.TITLE,MediaStore.Audio.Media.ARTIST},null,null,null)) { if(c!=null&&c.moveToFirst()){title=c.getString(0);artist=c.getString(1);} } catch(Exception ignored) {}
+    startTrack(); return true;
+  }
   private void resume(){ if(player!=null){try{mediaSession.setActive(true);player.start();playing=true;handler.removeCallbacks(ticker);handler.post(ticker);}catch(Exception ignored){} updateState();updateNotification();} }
   private void pause(){ if(player!=null&&player.isPlaying())player.pause();playing=false;updateState();updateNotification(); }
   private void seek(int ms){if(player!=null)try{player.seekTo(Math.max(0,Math.min(ms,player.getDuration())));currentPosition=ms;}catch(Exception ignored){}updateState();}
