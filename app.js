@@ -372,6 +372,13 @@ function loadTrack(index, autoplay = false) {
    REPRODUCIR Y PAUSAR
 ========================================= */
 
+async function syncNativeQueue(currentIndex = currentTrackIndex) {
+    if (!isNativeAndroid || !PulsoNative?.setNativeQueue) return;
+    const uris = playbackQueue.map(i => musicLibrary[i]).filter(t => t?.native).map(t => t.url);
+    const currentUri = musicLibrary[currentIndex]?.url || "";
+    try { await PulsoNative.setNativeQueue({ uris, currentUri }); } catch (error) { console.warn("No se pudo sincronizar la cola nativa", error); }
+}
+
 async function playCurrentTrack() {
     if (!audioPlayer) {
         return;
@@ -390,6 +397,7 @@ async function playCurrentTrack() {
         if (isNativeAndroid && musicLibrary[currentTrackIndex]?.native) {
             const track = musicLibrary[currentTrackIndex];
             await ensureNativePermissions();
+            await syncNativeQueue(currentTrackIndex);
             nativePlayRequestedAt = Date.now();
             await PulsoNative.playInBackground({ uri: track.url, title: track.name, artist: track.artist });
             isPlaying = true; updatePlayButton(); updateVinylRotation(); startNativeStatePolling(); return;
@@ -1652,6 +1660,19 @@ document.addEventListener("visibilitychange", () => {
 });
 
 if (isNativeAndroid) {
+    PulsoNative.addListener("mediaTrackChanged", event => {
+        const index = musicLibrary.findIndex(track => track.native && track.url === event.uri);
+        if (index < 0) return;
+        currentTrackIndex = index;
+        isPlaying = true;
+        const track = musicLibrary[index];
+        if (songTitle) songTitle.textContent = track.name;
+        if (songArtist) songArtist.textContent = track.artist;
+        if (currentTime) currentTime.textContent = "0:00";
+        if (totalTime) totalTime.textContent = formatTime(track.duration);
+        if (progressBar) progressBar.value = 0;
+        updatePlayButton(); updateVinylRotation(); savePulsoState();
+    });
     PulsoNative.addListener("mediaNext", playNextTrack);
     PulsoNative.addListener("mediaPrevious", playPreviousTrack);
     PulsoNative.addListener("mediaEnded", () => { if (repeatMode === 2) playCurrentTrack(); else playNextTrack(); });
