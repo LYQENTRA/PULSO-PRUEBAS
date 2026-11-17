@@ -1894,6 +1894,7 @@ async function refreshPremiumStatus() {
     try {
         const status = await PulsoBilling.getPremiumStatus();
         pulsoPremium = Boolean(status?.isPremium);
+        window.PulsoSkins?.setPremiumStatus(pulsoPremium);
         const button = $("premiumButton");
         const label = $("premiumStatus");
         if (pulsoPremium) {
@@ -1924,6 +1925,7 @@ async function openPremiumPurchase() {
         const result = await PulsoBilling.purchasePremium();
         if (result?.isPremium) {
             pulsoPremium = true;
+            window.PulsoSkins?.setPremiumStatus(true);
             if (label) label.textContent = "Premium activo. Gracias por apoyar PULSO.";
             if (button) button.textContent = "PULSO Premium activo";
             // Oculta el banner solo después de recibir confirmación de Google Play.
@@ -1999,6 +2001,7 @@ async function initAds() {
 
 function initializePulso() {
     restorePulsoState();
+    if (window.PulsoSkins) window.PulsoSkins.initialize();
     navigate("inicio");
 
     updateLibraryCount();

@@ -1687,3 +1687,16 @@ body {
 .premium-button { width: 100%; margin-top: 10px; padding: 12px 14px; border: 0; border-radius: 10px; background: #39ff14; color: #071006; font-weight: 800; }
 .premium-button:disabled { opacity: .55; }
 .premium-status { margin-bottom: 0; }
+
+
+/* Temas de carátula: colores globales sin modificar el motor multimedia. */
+:root[data-pulso-skin="red"] .app {
+  background: radial-gradient(ellipse at 70% 25%, rgba(255,38,56,.12), transparent 43%),
+              radial-gradient(ellipse at 15% 78%, rgba(255,82,98,.07), transparent 36%), #080304;
+}
+:root[data-pulso-skin="equalizer"] .app {
+  background: radial-gradient(ellipse at 70% 25%, rgba(168,85,247,.13), transparent 43%),
+              radial-gradient(ellipse at 15% 78%, rgba(217,70,239,.07), transparent 36%), #07040b;
+}
+:root[data-pulso-skin="red"] .search-panel input:focus { border-color: #ff2638; box-shadow: 0 0 20px rgba(255,38,56,.4); }
+:root[data-pulso-skin="equalizer"] .search-panel input:focus { border-color: #a855f7; box-shadow: 0 0 20px rgba(168,85,247,.4); }
