@@ -1296,12 +1296,17 @@ function animateVisualizer() {
 
 function updateVinylRotation() {
     const vinyl = $("vinyl");
+    const recordComposition = $("recordComposition");
 
     if (!vinyl) {
         return;
     }
 
+    // El vinilo y la carátula forman una sola pieza giratoria.
     vinyl.classList.toggle("playing", isPlaying);
+    if (recordComposition) {
+        recordComposition.classList.toggle("is-playing", isPlaying);
+    }
 }
 
 /* =========================================

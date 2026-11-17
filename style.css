@@ -1881,3 +1881,99 @@ html, body { background: #050806; }
 .visual-stage[data-visual-mode="mirror"] .album-center {
   display: none !important;
 }
+
+
+/* =========================================
+   PULSO V5 — VINILO + CARÁTULA COMO UNA PIEZA
+   La portada queda centrada sobre el disco.
+   Ambos giran juntos; el visualizador queda fuera.
+========================================= */
+.visual-stage .record-composition {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: clamp(238px, 68vw, 318px);
+  aspect-ratio: 1 / 1;
+  transform: translate(-50%, -50%);
+  transform-origin: center center;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.visual-stage .record-composition.is-playing {
+  animation: pulsoRecordRotate 12s linear infinite;
+}
+
+@keyframes pulsoRecordRotate {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to   { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+.visual-stage .record-composition .vinyl {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  transform: none;
+  z-index: 1;
+}
+
+.visual-stage .record-composition .vinyl-image {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+  animation: none !important;
+}
+
+.visual-stage .record-composition .album-center {
+  position: absolute !important;
+  left: 50% !important;
+  top: 50% !important;
+  width: 48% !important;
+  height: 48% !important;
+  transform: translate(-50%, -50%) !important;
+  z-index: 2 !important;
+  display: block;
+  overflow: hidden;
+  border-radius: 50%;
+  border: 2px solid rgba(177,255,205,.78);
+  background: #080c09;
+  box-shadow:
+    0 0 0 3px rgba(0,0,0,.72),
+    0 0 15px rgba(53,232,121,.20),
+    inset 0 0 8px rgba(0,0,0,.35);
+}
+
+.visual-stage .record-composition .album-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 50%;
+}
+
+.visual-stage[data-visual-mode="circular"] .visualizer-circle,
+.visual-stage:not([data-visual-mode]) .visualizer-circle {
+  z-index: 4 !important;
+}
+
+.visual-stage[data-visual-mode="circular"] .record-composition,
+.visual-stage:not([data-visual-mode]) .record-composition {
+  z-index: 3 !important;
+}
+
+.visual-stage[data-visual-mode="bars"] .record-composition,
+.visual-stage[data-visual-mode="wave"] .record-composition,
+.visual-stage[data-visual-mode="mirror"] .record-composition {
+  display: none !important;
+}
+
+@media (max-width: 380px) {
+  .visual-stage .record-composition {
+    width: min(72vw, 270px);
+  }
+}
