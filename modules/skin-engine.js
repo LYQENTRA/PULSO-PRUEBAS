@@ -41,7 +41,7 @@
       '--neon':skin.accent, '--neon-secondary':skin.accentSecondary,
       '--neon-rgb':skin.accentRgb, '--neon-secondary-rgb':skin.secondaryRgb,
       '--bg':skin.background, '--surface':skin.surface, '--theme-surface':skin.surface,
-      '--theme-panel':skin.panel, '--theme-text':skin.text, '--theme-muted':skin.muted, '--gray':skin.muted
+      '--theme-panel':skin.panel, '--theme-text':skin.text, '--theme-muted':skin.muted, '--text':skin.text, '--muted':skin.muted, '--gray':skin.muted, '--white':skin.text, '--border':`color-mix(in srgb, ${skin.accent} 22%, transparent)`, '--theme-border':`color-mix(in srgb, ${skin.accent} 22%, transparent)`, '--green':skin.accent, '--glow':`0 0 20px rgba(${skin.accentRgb},.38)`, '--theme-header':`color-mix(in srgb, ${skin.background} 92%, ${skin.panel})`, '--theme-control-bg':`color-mix(in srgb, ${skin.panel} 82%, ${skin.background})`
     };
     Object.entries(vars).forEach(([key,value]) => root.style.setProperty(key,value));
     try { global.localStorage.setItem(STORAGE_KEY,skin.id); } catch (_) {}
