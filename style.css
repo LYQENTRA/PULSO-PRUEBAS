@@ -1836,3 +1836,48 @@ html, body { background: #050806; }
   .stage-kicker { top: 16px; left: 16px; right: 16px; font-size: 8px; letter-spacing: 1.35px; }
   .player-controls { gap: clamp(9px, 3.7vw, 18px); }
 }
+
+
+/* =========================================
+   PULSO V4 — CARÁTULA DELANTE DEL VINILO
+   Orden: fondo < vinilo < visualizador < carátula
+========================================= */
+.visual-stage[data-visual-mode="circular"] .vinyl,
+.visual-stage:not([data-visual-mode]) .vinyl {
+  z-index: 2 !important;
+}
+
+.visual-stage[data-visual-mode="circular"] .visualizer-circle,
+.visual-stage:not([data-visual-mode]) .visualizer-circle {
+  z-index: 3 !important;
+}
+
+/* La carátula es hermana del vinilo y del visualizador, no hija de ellos.
+   Así queda inequívocamente por encima del disco y puede cambiar de imagen. */
+.visual-stage .album-center {
+  position: absolute !important;
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: clamp(108px, 29vw, 145px) !important;
+  height: clamp(108px, 29vw, 145px) !important;
+  z-index: 6 !important;
+  display: block;
+  overflow: hidden;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.visual-stage .album-center .album-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.visual-stage[data-visual-mode="bars"] .album-center,
+.visual-stage[data-visual-mode="wave"] .album-center,
+.visual-stage[data-visual-mode="mirror"] .album-center {
+  display: none !important;
+}
