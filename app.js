@@ -1226,6 +1226,31 @@ function createVisualizerBars() {
     animateVisualizer();
 }
 
+function createRedNeonElements() {
+    const wave = $("redWaveform"), left = $("redEqLeft"), right = $("redEqRight");
+    if (!wave || !left || !right) return;
+    const fill = (node, count, cls) => {
+        if (node.children.length === count) return;
+        node.replaceChildren();
+        for (let i = 0; i < count; i++) { const bar = document.createElement("i"); bar.className = cls; bar.dataset.index = String(i); node.appendChild(bar); }
+    };
+    fill(wave, 31, "red-wave-bar"); fill(left, 10, "red-side-bar"); fill(right, 10, "red-side-bar");
+}
+
+function updateRedNeonVisual() {
+    const stage = $("redNeonStage"); if (!stage) return;
+    let data = new Uint8Array(64);
+    if (isPlaying && isNativeTrack() && nativeFrequencyData?.length) data = nativeFrequencyData;
+    else if (isPlaying && analyser && frequencyData) { analyser.getByteFrequencyData(frequencyData); data = frequencyData; }
+    const levelAt = position => { if (!isPlaying || !data.length) return 0; const idx = Math.max(0, Math.min(data.length-1, Math.floor(position*(data.length-1)))); return Math.pow((data[idx]||0)/255, .78); };
+    let bass = 0; for (let i=1; i<=Math.min(7,data.length-1); i++) bass += data[i]||0;
+    bass = isPlaying ? Math.min(1, bass / (Math.max(1,Math.min(7,data.length-1))*210)) : 0;
+    stage.style.setProperty("--red-bass", bass.toFixed(3)); stage.classList.toggle("is-playing", Boolean(isPlaying));
+    const status=$("redReactorStatus"); if(status) status.textContent=isPlaying?"AUDIO REACTIVE":"STANDBY";
+    stage.querySelectorAll(".red-wave-bar").forEach((bar,i)=>{ const pos=i/30, lv=levelAt(.015+pos*.42), center=1-Math.abs(pos-.5)*.72; bar.style.height=`${isPlaying?5+lv*75*center:4+center*5}px`; bar.style.opacity=String(.45+lv*.55); });
+    [...($("redEqLeft")?.children||[]),...($("redEqRight")?.children||[])].forEach((bar,i)=>{ const j=i%10,lv=levelAt(.02+j/9*.56); bar.style.height=`${isPlaying?10+lv*92:8+(j%3)*3}px`; bar.style.opacity=String(.35+lv*.65); });
+}
+
 function animateVisualizer() {
     if (animationFrame) cancelAnimationFrame(animationFrame);
 
@@ -1238,6 +1263,7 @@ function animateVisualizer() {
     function draw() {
         const mode = stage.dataset.visualMode || "circular";
         const count = bars.length;
+        updateRedNeonVisual();
 
         const usingNative = isNativeTrack();
         if (!usingNative && analyser && frequencyData && isPlaying) { analyser.getByteFrequencyData(frequencyData); }
@@ -2071,6 +2097,7 @@ function initializePulso() {
 
     updateVinylRotation();
 
+    createRedNeonElements();
     createVisualizerBars();
     const allowedModes = ["circular", "bars", "wave", "mirror"];
     setVisualizerMode(allowedModes.includes(restoredPulsoState.visualMode) ? restoredPulsoState.visualMode : "circular");
