@@ -28,6 +28,8 @@ const totalTime = $("duration");
 
 const songTitle = $("songTitle");
 const songArtist = $("songArtist");
+const albumArt = $("albumArt");
+const DEFAULT_ALBUM_ART = "assets/portada-aurora.webp";
 
 const screenContent = $("screenContent");
 const libraryCount = $("libraryCount");
@@ -321,6 +323,35 @@ function updateLibraryCount() {
 }
 
 /* =========================================
+   CARÁTULA DINÁMICA DE LA CANCIÓN
+========================================= */
+
+function updateTrackArtwork(track) {
+    if (!albumArt) return;
+    // Android MediaStore entrega el ID del álbum. WebView puede resolver
+    // esta URI local sin subir la imagen a ningún servidor.
+    const albumId = track?.albumId;
+    const artworkUri = track?.artwork || (isNativeAndroid && albumId && albumId !== "0"
+        ? `content://media/external/audio/albumart/${encodeURIComponent(albumId)}`
+        : "");
+    albumArt.onerror = () => {
+        albumArt.onerror = null;
+        albumArt.src = DEFAULT_ALBUM_ART;
+    };
+    albumArt.src = artworkUri || DEFAULT_ALBUM_ART;
+    const stage = document.querySelector(".visual-stage");
+    if (stage) {
+        if (artworkUri) {
+            stage.style.setProperty("--current-cover", `url("${artworkUri.replace(/[\"\\]/g, "")}")`);
+            stage.classList.add("cover-background");
+        } else {
+            stage.style.removeProperty("--current-cover");
+            stage.classList.remove("cover-background");
+        }
+    }
+}
+
+/* =========================================
    PREPARAR REPRODUCCIÓN
 ========================================= */
 
@@ -338,6 +369,7 @@ function loadTrack(index, autoplay = false) {
     currentTrackIndex = index;
 
     const track = musicLibrary[index];
+    updateTrackArtwork(track);
 
     if (!track.native) { audioPlayer.src = track.url; audioPlayer.load(); } else { audioPlayer.removeAttribute("src"); audioPlayer.load(); }
 
@@ -1512,7 +1544,7 @@ async function scanNativeLibrary() {
         musicLibrary.forEach(t=>{if(t.url && t.url.startsWith("blob:"))URL.revokeObjectURL(t.url);});
         musicLibrary = (result.tracks || []).map(t=>{
             const uri=t.uri, old=oldByUri.get(uri);
-            return { id:t.id, name:t.title || "Canción desconocida", artist:t.artist && t.artist !== "<unknown>" ? t.artist : "Artista desconocido", album:t.album && t.album !== "<unknown>" ? t.album : "Álbum desconocido", folder:t.folder || "Almacenamiento interno", duration:(Number(t.duration)||0)/1000, url:uri, native:true, favorite:!!(old?.favorite || savedFavorites.has(uri)) };
+            return { id:t.id, name:t.title || "Canción desconocida", artist:t.artist && t.artist !== "<unknown>" ? t.artist : "Artista desconocido", album:t.album && t.album !== "<unknown>" ? t.album : "Álbum desconocido", albumId:t.albumId || "", folder:t.folder || "Almacenamiento interno", duration:(Number(t.duration)||0)/1000, url:uri, native:true, favorite:!!(old?.favorite || savedFavorites.has(uri)) };
         });
         const savedQueue = restoredPulsoState.queue || [];
         playbackQueue = savedQueue.length ? savedQueue.map(uri=>musicLibrary.findIndex(t=>t.url===uri)).filter(i=>i>=0) : musicLibrary.map((_,i)=>i);
@@ -1520,6 +1552,7 @@ async function scanNativeLibrary() {
         currentTrackIndex = restoredPulsoState.current ? musicLibrary.findIndex(t=>t.url===restoredPulsoState.current) : -1;
         if (currentTrackIndex >= 0) {
             const restoredTrack = musicLibrary[currentTrackIndex];
+            updateTrackArtwork(restoredTrack);
             if (songTitle) songTitle.textContent = restoredTrack.name;
             if (songArtist) songArtist.textContent = restoredTrack.artist;
             if (totalTime) totalTime.textContent = formatTime(restoredTrack.duration);
