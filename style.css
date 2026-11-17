@@ -2068,11 +2068,15 @@ body, .app {
   border-radius:18px; background:var(--theme-panel); padding:12px;
 }
 .skin-card.is-selected { border-color:var(--neon); box-shadow:0 0 18px color-mix(in srgb,var(--neon) 15%,transparent); }
-.skin-preview {
-  height:145px; border-radius:13px; overflow:hidden; position:relative;
-  background:radial-gradient(circle at 50% 48%,color-mix(in srgb,var(--preview-accent) 24%,transparent),transparent 48%),var(--preview-bg);
-  border:1px solid color-mix(in srgb,var(--preview-accent) 30%,transparent);
-  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px;
+.skin-preview-image {
+  height: 210px; border-radius: 13px; overflow: hidden; position: relative;
+  background: #050505; border: 1px solid var(--theme-border);
+}
+.skin-preview-image img { display:block; width:100%; height:100%; object-fit:cover; }
+.skin-current-label {
+  position:absolute; top:9px; right:9px; padding:6px 9px; border-radius:20px;
+  color:#050505; background:var(--neon); font-size:9px; font-weight:900; letter-spacing:.8px;
+  box-shadow:0 0 14px color-mix(in srgb,var(--neon) 45%,transparent);
 }
 .skin-preview-top { position:absolute; top:12px; left:12px; right:12px; display:flex; align-items:center; gap:7px; }
 .skin-preview-top i { width:7px;height:7px;border-radius:50%;background:var(--preview-accent);box-shadow:0 0 9px var(--preview-accent); }
@@ -2086,9 +2090,9 @@ body, .app {
 .skin-card-info small { display:block;color:var(--gray);font-size:11px;line-height:1.4;margin-top:4px; }
 .skin-access { font-size:9px;font-weight:800;letter-spacing:1px;padding:5px 7px;border-radius:20px;white-space:nowrap; }
 .skin-access.free { color:var(--neon);background:color-mix(in srgb,var(--neon) 12%,transparent); }
-.skin-access.premium { color:#ffd98a;background:rgba(255,190,70,.12); }
+
 .skin-select-btn { width:100%;min-height:42px;border-radius:11px;border:1px solid color-mix(in srgb,var(--neon) 45%,transparent);color:var(--neon);font-weight:700;background:color-mix(in srgb,var(--neon) 8%,transparent); }
-.skin-select-btn:disabled { opacity:.65;cursor:default; }
+.skin-select-btn:disabled { opacity:.65;cursor:default; }\n.skin-select-btn[aria-pressed="true"] { background:color-mix(in srgb,var(--neon) 17%,transparent); }
 
 
 /* =====================================================

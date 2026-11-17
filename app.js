@@ -954,34 +954,31 @@ function renderSkinStore() {
     if (!screenContent || !window.PulsoSkins) return;
     const current = window.PulsoSkins.current();
     const skins = window.PulsoSkins.list();
-    const isPremium = Boolean(pulsoPremium || window.PULSO_PREMIUM);
     const subtitle = $("librarySubtitle");
-    if (subtitle) subtitle.textContent = "Cambia la identidad visual de toda la aplicación.";
+    if (subtitle) subtitle.textContent = "Vista previa y personalización de PULSO.";
     const count = $("libraryCount");
-    if (count) count.textContent = "TEMAS";
+    if (count) count.textContent = `${skins.length} TEMAS`;
     screenContent.innerHTML = `
       <div class="skin-store-intro">
         <span class="library-eyebrow">PERSONALIZA PULSO</span>
         <h3>Elige tu estilo</h3>
-        <p>La carátula cambia los colores del reproductor, el menú y las demás secciones. Tu música continúa reproduciéndose.</p>
+        <p>Todos los temas son gratuitos. Mira su diseño y aplica el que más te guste. Tu música seguirá reproduciéndose.</p>
       </div>
       <div class="skin-grid">
         ${skins.map(skin => {
-          const locked = skin.access === "premium" && !isPremium;
           const selected = current.id === skin.id;
           return `
             <article class="skin-card ${selected ? "is-selected" : ""}" data-skin-card="${skin.id}">
-              <div class="skin-preview" style="--preview-accent:${skin.accent};--preview-bg:${skin.background};--preview-panel:${skin.panel}">
-                <div class="skin-preview-top"><i></i><b></b><b></b></div>
-                <div class="skin-preview-disc"><span></span></div>
-                <div class="skin-preview-controls"><i></i><i></i><i></i></div>
+              <div class="skin-preview-image">
+                <img src="${skin.preview}" alt="Vista previa de ${skin.name}" loading="lazy">
+                ${selected ? '<span class="skin-current-label">EN USO</span>' : ''}
               </div>
               <div class="skin-card-info">
                 <div><strong>${skin.name}</strong><small>${skin.description}</small></div>
-                <span class="skin-access ${locked ? "premium" : "free"}">${locked ? "PREMIUM" : "GRATIS"}</span>
+                <span class="skin-access free">GRATIS</span>
               </div>
-              <button class="skin-select-btn" data-select-skin="${skin.id}" ${locked ? 'aria-disabled="true"' : ""} aria-pressed="${selected}">
-                ${selected ? "En uso · volver a aplicar" : locked ? "Desbloquear con Premium" : "Aplicar carátula"}
+              <button class="skin-select-btn" data-select-skin="${skin.id}" aria-pressed="${selected}">
+                ${selected ? "En uso · volver a aplicar" : "Aplicar carátula"}
               </button>
             </article>`;
         }).join("")}
@@ -992,8 +989,6 @@ function renderSkinStore() {
         if (result.applied) {
           showMessage(`Carátula ${result.skin.name} aplicada.`);
           renderSkinStore();
-        } else if (result.reason === "premium_required") {
-          showMessage("Esta carátula es exclusiva de PULSO Premium.");
         }
       });
     });
