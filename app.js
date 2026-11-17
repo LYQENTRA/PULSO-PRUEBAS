@@ -1004,16 +1004,6 @@ function renderSettings() {
     }
 
     screenContent.innerHTML = `
-        <div class="settings-section">
-            <h3>Visualizador</h3>
-            <div class="visualizer-options">
-                <button class="visualizer-option" data-visual-mode="circular">Circular</button>
-                <button class="visualizer-option" data-visual-mode="bars">Barras</button>
-                <button class="visualizer-option" data-visual-mode="wave">Olas</button>
-                <button class="visualizer-option" data-visual-mode="mirror">Simétrico</button>
-            </div>
-        </div>
-
         ${isNativeAndroid ? `
         <div class="settings-section">
             <h3>Segundo plano</h3>
@@ -1045,20 +1035,6 @@ function renderSettings() {
         });
     }
 
-    const modeButtons = screenContent.querySelectorAll("[data-visual-mode]");
-
-    modeButtons.forEach(button => {
-        button.addEventListener("click", () => {
-            setVisualizerMode(button.dataset.visualMode);
-
-            modeButtons.forEach(option => {
-                option.classList.toggle(
-                    "active",
-                    option === button
-                );
-            });
-        });
-    });
 }
 
 /* =========================================
@@ -1897,15 +1873,6 @@ document.addEventListener("keydown", event => {
     }
 });
 
-
-/* CONTROLES DE ESTILO DEL MODAL ORIGINAL */
-document.querySelectorAll("[data-visual]").forEach(button => {
-    button.addEventListener("click", () => {
-        const map = { circle: "circular", bars: "bars", wave: "wave", mirror: "mirror" };
-        setVisualizerMode(map[button.dataset.visual] || "circular");
-        document.querySelectorAll("[data-visual]").forEach(item => item.classList.toggle("selected", item === button));
-    });
-});
 
 const settingsModal = $("settingsModal");
 const closeSettings = $("closeSettings");
