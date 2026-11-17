@@ -5,16 +5,16 @@
   'use strict';
   const STORAGE_KEY = 'pulso.activeSkin';
   const skins = [
-    { id:'classic', name:'Classic Green', description:'Identidad original de PULSO.', access:'free',
+    { id:'classic', name:'Classic Green', description:'Identidad original de PULSO.', access:'free', preview:'assets/skins/classic-green.svg',
       accent:'#39FF14', accentSecondary:'#00E65A', accentRgb:'57,255,20', secondaryRgb:'0,230,90',
       background:'#030504', surface:'#0b100e', panel:'#101713', text:'#ffffff', muted:'#a8b3ad' },
-    { id:'red', name:'Red Neon', description:'Negro profundo con rojo intenso.', access:'premium',
+    { id:'red', name:'Red Neon', description:'Negro profundo con rojo intenso.', access:'free', preview:'assets/skins/red-neon.svg',
       accent:'#FF2638', accentSecondary:'#FF6673', accentRgb:'255,38,56', secondaryRgb:'255,102,115',
       background:'#080304', surface:'#16090b', panel:'#210d10', text:'#fff7f7', muted:'#c5aeb1' },
-    { id:'equalizer', name:'Equalizer Purple', description:'Experiencia centrada en el sonido.', access:'premium',
+    { id:'equalizer', name:'Equalizer Purple', description:'Experiencia centrada en el sonido.', access:'free', preview:'assets/skins/equalizer-purple.svg',
       accent:'#B45CFF', accentSecondary:'#F052D6', accentRgb:'180,92,255', secondaryRgb:'240,82,214',
       background:'#08040d', surface:'#120b1b', panel:'#1c1028', text:'#fffaff', muted:'#b9a9c7' },
-    { id:'silver', name:'Silver Edition', description:'Estilo minimalista en plata.', access:'premium',
+    { id:'silver', name:'Silver Edition', description:'Estilo minimalista en plata.', access:'free', preview:'assets/skins/silver-edition.svg',
       accent:'#D5E0E8', accentSecondary:'#8EA5B5', accentRgb:'213,224,232', secondaryRgb:'142,165,181',
       background:'#080b0e', surface:'#11171c', panel:'#1a232b', text:'#f6f9fb', muted:'#aebbc4' }
   ];
