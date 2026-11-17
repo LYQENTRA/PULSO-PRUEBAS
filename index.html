@@ -118,10 +118,17 @@
 
       <div class="stage-kicker"><span class="stage-live-dot"></span> PULSO ORIGINAL <span class="stage-kicker-line"></span> NOW PLAYING</div>
 
+      <!-- CAPA 1: carátula dinámica independiente, detrás del vinilo -->
+      <div class="cover-backdrop-layer" id="coverBackdrop" aria-hidden="true">
+        <img src="assets/portada-aurora.webp" alt="" id="coverBackdropImage">
+      </div>
+
+      <!-- CAPA 2: vinilo giratorio -->
       <div class="vinyl" id="vinyl" aria-hidden="true">
         <img src="assets/vinilo-3d.webp" alt="" class="vinyl-image">
       </div>
 
+      <!-- CAPA 3: visualizador reactivo -->
       <div class="visualizer-circle" id="visualizerCircle">
 
         <div class="visualizer-bars" id="visualizerBars"></div>

@@ -29,6 +29,7 @@ const totalTime = $("duration");
 const songTitle = $("songTitle");
 const songArtist = $("songArtist");
 const albumArt = $("albumArt");
+const coverBackdropImage = $("coverBackdropImage");
 const DEFAULT_ALBUM_ART = "assets/portada-aurora.webp";
 
 const screenContent = $("screenContent");
@@ -334,20 +335,19 @@ function updateTrackArtwork(track) {
     const artworkUri = track?.artwork || (isNativeAndroid && albumId && albumId !== "0"
         ? `content://media/external/audio/albumart/${encodeURIComponent(albumId)}`
         : "");
-    albumArt.onerror = () => {
+    const fallbackArtwork = DEFAULT_ALBUM_ART;
+    const setFallback = () => {
         albumArt.onerror = null;
-        albumArt.src = DEFAULT_ALBUM_ART;
+        albumArt.src = fallbackArtwork;
+        if (coverBackdropImage) coverBackdropImage.src = fallbackArtwork;
     };
-    albumArt.src = artworkUri || DEFAULT_ALBUM_ART;
+    albumArt.onerror = setFallback;
+    if (coverBackdropImage) coverBackdropImage.onerror = setFallback;
+    albumArt.src = artworkUri || fallbackArtwork;
+    if (coverBackdropImage) coverBackdropImage.src = artworkUri || fallbackArtwork;
     const stage = document.querySelector(".visual-stage");
     if (stage) {
-        if (artworkUri) {
-            stage.style.setProperty("--current-cover", `url("${artworkUri.replace(/[\"\\]/g, "")}")`);
-            stage.classList.add("cover-background");
-        } else {
-            stage.style.removeProperty("--current-cover");
-            stage.classList.remove("cover-background");
-        }
+        stage.classList.toggle("cover-background", Boolean(artworkUri));
     }
 }
 
