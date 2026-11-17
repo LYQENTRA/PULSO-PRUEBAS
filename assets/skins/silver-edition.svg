@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="600" viewBox="0 0 400 600">
+<defs>
+ <radialGradient id="glow"><stop stop-color="#D5E0E8" stop-opacity=".28"/><stop offset="1" stop-color="#080b0e" stop-opacity="0"/></radialGradient>
+ <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#1a232b"/><stop offset="1" stop-color="#080b0e"/></linearGradient>
+ <linearGradient id="cover" x2="1" y2="1"><stop stop-color="#D5E0E8"/><stop offset="1" stop-color="#8EA5B5"/></linearGradient>
+</defs>
+<rect width="400" height="600" rx="24" fill="url(#bg)"/>
+<circle cx="200" cy="290" r="190" fill="url(#glow)"/>
+<path d="M0 88H400" stroke="#D5E0E8" stroke-opacity=".25"/>
+<text x="30" y="48" fill="#D5E0E8" font-family="Arial" font-size="23" font-weight="800" letter-spacing="4">PULSO</text>
+<circle cx="32" cy="70" r="3" fill="#D5E0E8"/><path d="M45 70H130" stroke="#D5E0E8" stroke-opacity=".5"/>
+<circle cx="200" cy="280" r="132" fill="#090909" stroke="#333" stroke-width="9"/>
+<circle cx="200" cy="280" r="112" fill="none" stroke="#555" stroke-opacity=".4" stroke-width="1"/>
+<circle cx="200" cy="280" r="94" fill="none" stroke="#555" stroke-opacity=".35" stroke-width="2"/>
+<circle cx="200" cy="280" r="76" fill="none" stroke="#555" stroke-opacity=".35" stroke-width="2"/>
+<rect x="142" y="222" width="116" height="116" rx="12" fill="url(#cover)" stroke="#D5E0E8" stroke-width="3"/>
+<path d="M155 312 Q200 238 245 312" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="5"/>
+<circle cx="200" cy="280" r="7" fill="#fff" fill-opacity=".8"/>
+<text x="200" y="455" text-anchor="middle" fill="#fff" font-family="Arial" font-size="20" font-weight="700">NUEVA CANCIÓN</text>
+<text x="200" y="480" text-anchor="middle" fill="#8EA5B5" font-family="Arial" font-size="13">Artista · Álbum</text>
+<path d="M55 525H345" stroke="#777" stroke-opacity=".45" stroke-width="4" stroke-linecap="round"/>
+<path d="M55 525H190" stroke="#D5E0E8" stroke-width="4" stroke-linecap="round"/>
+<rect x="102" y="402" width="5" height="18" rx="2.5" fill="#D5E0E8" opacity=".72"/><rect x="116" y="389" width="5" height="31" rx="2.5" fill="#D5E0E8" opacity=".72"/><rect x="130" y="376" width="5" height="44" rx="2.5" fill="#D5E0E8" opacity=".72"/><rect x="144" y="397" width="5" height="23" rx="2.5" fill="#D5E0E8" opacity=".72"/><rect x="158" y="384" width="5" height="36" rx="2.5" fill="#D5E0E8" opacity=".72"/><rect x="172" y="371" width="5" height="49" rx="2.5" fill="#D5E0E8" opacity=".72"/><rect x="186" y="392" width="5" height="28" rx="2.5" fill="#D5E0E8" opacity=".72"/><rect x="200" y="379" width="5" height="41" rx="2.5" fill="#D5E0E8" opacity=".72"/><rect x="214" y="400" width="5" height="20" rx="2.5" fill="#D5E0E8" opacity=".72"/><rect x="228" y="387" width="5" height="33" rx="2.5" fill="#D5E0E8" opacity=".72"/><rect x="242" y="374" width="5" height="46" rx="2.5" fill="#D5E0E8" opacity=".72"/><rect x="256" y="395" width="5" height="25" rx="2.5" fill="#D5E0E8" opacity=".72"/><rect x="270" y="382" width="5" height="38" rx="2.5" fill="#D5E0E8" opacity=".72"/><rect x="284" y="369" width="5" height="51" rx="2.5" fill="#D5E0E8" opacity=".72"/><rect x="298" y="390" width="5" height="30" rx="2.5" fill="#D5E0E8" opacity=".72"/>
+<g fill="#D5E0E8"><path d="M126 500 l24 -14 v28z"/><rect x="185" y="486" width="30" height="30" rx="15"/><path d="M274 486 l24 14 -24 14z"/></g>
+<text x="200" y="570" text-anchor="middle" fill="#D5E0E8" font-family="Arial" font-size="10" letter-spacing="3">SILVER EDITION</text>
+</svg>
