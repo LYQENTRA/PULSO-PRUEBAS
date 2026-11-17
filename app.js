@@ -206,6 +206,7 @@ function navigate(screen) {
             listas: "Mis listas",
             carpetas: "Carpetas",
             ecualizador: "Ecualizador",
+            skins: "Carátulas",
             albumes: "Álbumes",
             artistas: "Artistas"
         };
@@ -242,6 +243,14 @@ function navigate(screen) {
 
     if (screen === "carpetas") {
         renderLibraryCategory("carpetas");
+    }
+
+    if (screen === "skins") {
+        renderSkinStore();
+    }
+
+    if (secondaryScreen) {
+        secondaryScreen.classList.toggle("skin-store-screen", screen === "skins");
     }
 
     window.scrollTo({
@@ -936,6 +945,58 @@ function renderFavorites() {
     });
 
     screenContent.appendChild(list);
+}
+
+/* =========================================
+   SELECTOR DE CARÁTULAS / TEMAS
+========================================= */
+function renderSkinStore() {
+    if (!screenContent || !window.PulsoSkins) return;
+    const current = window.PulsoSkins.current();
+    const skins = window.PulsoSkins.list();
+    const isPremium = Boolean(pulsoPremium || window.PULSO_PREMIUM);
+    const subtitle = $("librarySubtitle");
+    if (subtitle) subtitle.textContent = "Cambia la identidad visual de toda la aplicación.";
+    const count = $("libraryCount");
+    if (count) count.textContent = "TEMAS";
+    screenContent.innerHTML = `
+      <div class="skin-store-intro">
+        <span class="library-eyebrow">PERSONALIZA PULSO</span>
+        <h3>Elige tu estilo</h3>
+        <p>La carátula cambia los colores del reproductor, el menú y las demás secciones. Tu música continúa reproduciéndose.</p>
+      </div>
+      <div class="skin-grid">
+        ${skins.map(skin => {
+          const locked = skin.access === "premium" && !isPremium;
+          const selected = current.id === skin.id;
+          return `
+            <article class="skin-card ${selected ? "is-selected" : ""}" data-skin-card="${skin.id}">
+              <div class="skin-preview" style="--preview-accent:${skin.accent};--preview-bg:${skin.background};--preview-panel:${skin.panel}">
+                <div class="skin-preview-top"><i></i><b></b><b></b></div>
+                <div class="skin-preview-disc"><span></span></div>
+                <div class="skin-preview-controls"><i></i><i></i><i></i></div>
+              </div>
+              <div class="skin-card-info">
+                <div><strong>${skin.name}</strong><small>${skin.description}</small></div>
+                <span class="skin-access ${locked ? "premium" : "free"}">${locked ? "PREMIUM" : "GRATIS"}</span>
+              </div>
+              <button class="skin-select-btn" data-select-skin="${skin.id}" ${selected ? "disabled" : ""}>
+                ${selected ? "En uso" : locked ? "Desbloquear con Premium" : "Aplicar carátula"}
+              </button>
+            </article>`;
+        }).join("")}
+      </div>`;
+    screenContent.querySelectorAll("[data-select-skin]").forEach(button => {
+      button.addEventListener("click", () => {
+        const result = window.PulsoSkins.apply(button.dataset.selectSkin);
+        if (result.applied) {
+          showMessage(`Carátula ${result.skin.name} aplicada.`);
+          renderSkinStore();
+        } else if (result.reason === "premium_required") {
+          showMessage("Esta carátula es exclusiva de PULSO Premium.");
+        }
+      });
+    });
 }
 
 /* =========================================
