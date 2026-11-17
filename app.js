@@ -980,8 +980,8 @@ function renderSkinStore() {
                 <div><strong>${skin.name}</strong><small>${skin.description}</small></div>
                 <span class="skin-access ${locked ? "premium" : "free"}">${locked ? "PREMIUM" : "GRATIS"}</span>
               </div>
-              <button class="skin-select-btn" data-select-skin="${skin.id}" ${selected ? "disabled" : ""}>
-                ${selected ? "En uso" : locked ? "Desbloquear con Premium" : "Aplicar carátula"}
+              <button class="skin-select-btn" data-select-skin="${skin.id}" ${locked ? 'aria-disabled="true"' : ""} aria-pressed="${selected}">
+                ${selected ? "En uso · volver a aplicar" : locked ? "Desbloquear con Premium" : "Aplicar carátula"}
               </button>
             </article>`;
         }).join("")}
