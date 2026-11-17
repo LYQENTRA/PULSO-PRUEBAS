@@ -5,8 +5,11 @@
 (function (global) {
   'use strict';
   const STORAGE_KEY = 'pulso.activeSkin';
-  const skin = {
-    id: 'red',
+  const skins = [
+    { id:'classic', name:'Classic Green', description:'Identidad original de PULSO.', access:'free', preview:'assets/skins/classic-green.svg',
+      accent:'#39FF14', accentSecondary:'#00E65A', accentRgb:'57,255,20', secondaryRgb:'0,230,90',
+      background:'#030504', surface:'#0b100e', panel:'#101713', text:'#ffffff', muted:'#a8b3ad' },
+    { id:'red',
     name: 'Red Neon',
     description: 'Negro profundo, estructura industrial y luz roja.',
     access: 'free',
@@ -19,11 +22,16 @@
     surface: '#16090b',
     panel: '#210d10',
     text: '#fff7f7',
-    muted: '#c5aeb1'
-  };
+    muted: '#c5aeb1' }
+  ];
   let premiumUnlocked = false;
+  const findSkin = id => skins.find(item => item.id === id) || skins[0];
+  function currentId() {
+    try { return findSkin(global.localStorage.getItem(STORAGE_KEY)).id; } catch (_) { return 'classic'; }
+  }
 
   function apply(id) {
+    const skin = findSkin(id);
     const root = global.document.documentElement;
     root.dataset.pulsoSkin = skin.id;
     const vars = {
@@ -51,18 +59,28 @@
     Object.entries(vars).forEach(([key, value]) => root.style.setProperty(key, value));
     try {
       global.localStorage.setItem(STORAGE_KEY, skin.id);
-      global.localStorage.removeItem('pulso.activeSkin');
+      global.localStorage.setItem('pulso.skin.catalog.v3', '1');
     } catch (_) {}
     global.dispatchEvent(new CustomEvent('pulso:skin-changed', { detail: { skin } }));
     return { applied: true, skin: { ...skin } };
   }
 
   global.PulsoSkins = Object.freeze({
-    list: () => [{ ...skin }],
-    get: () => ({ ...skin }),
-    current: () => ({ ...skin }),
+    list: () => skins.map(item => ({ ...item })),
+    get: id => ({ ...findSkin(id) }),
+    current: () => ({ ...findSkin(currentId()) }),
     apply,
     setPremiumStatus: value => { premiumUnlocked = Boolean(value); global.PULSO_PREMIUM = premiumUnlocked; },
-    initialize: () => apply('red')
+    initialize: () => {
+      // La versión anterior forzaba Red Neon al iniciar. Una sola migración devuelve
+      // esos usuarios a Classic Green sin borrar la preferencia en futuras aperturas.
+      try {
+        if (global.localStorage.getItem('pulso.skin.catalog.v3') !== '1') {
+          global.localStorage.setItem(STORAGE_KEY, 'classic');
+          global.localStorage.setItem('pulso.skin.catalog.v3', '1');
+        }
+      } catch (_) {}
+      return apply(currentId());
+    }
   });
 })(window);
