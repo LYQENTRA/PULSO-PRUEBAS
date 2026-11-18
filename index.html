@@ -166,7 +166,7 @@
     <div class="song-info">
 
       <button class="icon-btn favorite-btn"
-        id="favoriteBtn"
+        id="favoriteBtn" data-pulso-action="playback.favorite"
         aria-label="Agregar a favoritos">
         ♡
       </button>
@@ -176,7 +176,7 @@
         <p id="songArtist">Tu biblioteca musical</p>
       </div>
 
-      <button class="icon-btn" id="queueBtn" aria-label="Ver cola">
+      <button class="icon-btn" id="queueBtn" data-pulso-action="navigation.queue" aria-label="Ver cola">
         ☷
       </button>
 
@@ -185,7 +185,7 @@
     <div class="progress-section">
 
       <input type="range"
-        id="progressBar"
+        id="progressBar" data-pulso-action="playback.seek"
         min="0"
         max="100"
         value="0"
@@ -199,11 +199,11 @@
     </div>
 
     <div class="player-controls">
-      <button class="control-btn accent" id="repeatBtn" aria-label="Repetir">⟳</button>
-      <button class="control-btn" id="previousBtn" aria-label="Anterior">◀|</button>
-      <button class="play-btn" id="playBtn" aria-label="Reproducir">▶</button>
-      <button class="control-btn" id="nextBtn" aria-label="Siguiente">|▶</button>
-      <button class="control-btn accent" id="shuffleBtn" aria-label="Aleatorio">⤨</button>
+      <button class="control-btn accent" id="repeatBtn" data-pulso-action="playback.repeat" aria-label="Repetir">⟳</button>
+      <button class="control-btn" id="previousBtn" data-pulso-action="playback.previous" aria-label="Anterior">◀|</button>
+      <button class="play-btn" id="playBtn" data-pulso-action="playback.toggle" aria-label="Reproducir">▶</button>
+      <button class="control-btn" id="nextBtn" data-pulso-action="playback.next" aria-label="Siguiente">|▶</button>
+      <button class="control-btn accent" id="shuffleBtn" data-pulso-action="playback.shuffle" aria-label="Aleatorio">⤨</button>
     </div>
 
     <section class="queue-panel" id="queuePanel">
@@ -216,7 +216,7 @@
           <strong>Siguiente en reproducción</strong>
         </div>
 
-        <button id="queueToggle"
+        <button id="queueToggle" data-pulso-action="navigation.queue-toggle"
           class="accent"
           aria-label="Mostrar u ocultar cola"
           aria-expanded="true">
