@@ -1,33 +1,49 @@
-/* PULSO Skin Engine — catálogo temporal de una sola carátula.
- * Red Neon queda como único tema mientras se desarrolla y prueba como skin completa.
- * Este motor solo cambia la apariencia; no reinicia ni modifica el motor de audio.
- */
 (function (global) {
   'use strict';
   const STORAGE_KEY = 'pulso.activeSkin';
   const skins = [
-    { id:'classic', name:'Classic Green', description:'Identidad original de PULSO.', access:'free', preview:'assets/skins/classic-green.svg',
-      accent:'#39FF14', accentSecondary:'#00E65A', accentRgb:'57,255,20', secondaryRgb:'0,230,90',
-      background:'#030504', surface:'#0b100e', panel:'#101713', text:'#ffffff', muted:'#a8b3ad' },
-    { id:'red',
-    name: 'Red Neon',
-    description: 'Negro profundo, estructura industrial y luz roja.',
-    access: 'free',
-    preview: 'assets/skins/red-neon.svg',
-    accent: '#FF2638',
-    accentSecondary: '#FF6673',
-    accentRgb: '255,38,56',
-    secondaryRgb: '255,102,115',
-    background: '#080304',
-    surface: '#16090b',
-    panel: '#210d10',
-    text: '#fff7f7',
-    muted: '#c5aeb1' }
+    {
+      id: 'classic',
+      name: 'Classic Green',
+      description: 'Identidad original de PULSO.',
+      access: 'free',
+      preview: 'assets/skins/classic-green.svg',
+      accent: '#39FF14',
+      accentSecondary: '#00E65A',
+      accentRgb: '57,255,20',
+      secondaryRgb: '0,230,90',
+      background: '#030504',
+      surface: '#0b100e',
+      panel: '#101713',
+      text: '#ffffff',
+      muted: '#a8b3ad'
+    },
+    {
+      id: 'red',
+      name: 'Red Neon',
+      description: 'Consola industrial negra con iluminación roja.',
+      access: 'free',
+      preview: 'assets/skins/red-neon-preview.jpg',
+      accent: '#FF2638',
+      accentSecondary: '#FF6673',
+      accentRgb: '255,38,56',
+      secondaryRgb: '255,102,115',
+      background: '#080304',
+      surface: '#16090b',
+      panel: '#210d10',
+      text: '#fff7f7',
+      muted: '#c5aeb1'
+    }
   ];
   let premiumUnlocked = false;
   const findSkin = id => skins.find(item => item.id === id) || skins[0];
+
   function currentId() {
-    try { return findSkin(global.localStorage.getItem(STORAGE_KEY)).id; } catch (_) { return 'classic'; }
+    try {
+      return findSkin(global.localStorage.getItem(STORAGE_KEY)).id;
+    } catch (_) {
+      return 'classic';
+    }
   }
 
   function apply(id) {
@@ -70,10 +86,11 @@
     get: id => ({ ...findSkin(id) }),
     current: () => ({ ...findSkin(currentId()) }),
     apply,
-    setPremiumStatus: value => { premiumUnlocked = Boolean(value); global.PULSO_PREMIUM = premiumUnlocked; },
+    setPremiumStatus: value => {
+      premiumUnlocked = Boolean(value);
+      global.PULSO_PREMIUM = premiumUnlocked;
+    },
     initialize: () => {
-      // La versión anterior forzaba Red Neon al iniciar. Una sola migración devuelve
-      // esos usuarios a Classic Green sin borrar la preferencia en futuras aperturas.
       try {
         if (global.localStorage.getItem('pulso.skin.catalog.v3') !== '1') {
           global.localStorage.setItem(STORAGE_KEY, 'classic');
