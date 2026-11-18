@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "actions": {
+    "playback.toggle": "playBtn",
+    "playback.previous": "previousBtn",
+    "playback.next": "nextBtn",
+    "playback.shuffle": "shuffleBtn",
+    "playback.repeat": "repeatBtn",
+    "playback.favorite": "favoriteBtn",
+    "playback.seek": "progressBar",
+    "navigation.queue": "queueBtn",
+    "navigation.queue-toggle": "queueToggle"
+  }
+}
