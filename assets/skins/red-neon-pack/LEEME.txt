@@ -1,0 +1,7 @@
+RED NEON - PAQUETE DE RECURSOS PARA PULSO
+
+Este directorio contiene recursos gráficos separados y el manifiesto skin.json.
+PNG/WebP se utilizan para ilustraciones; SVG para marcos, paneles, iconos y visualizadores.
+Los controles funcionales existentes conservan sus IDs y reciben identificadores data-pulso-action.
+
+No borres los recursos antiguos de assets/skins/red-neon: se mantienen por compatibilidad.

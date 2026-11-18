@@ -1,0 +1,112 @@
+{
+  "format": "pulso-skin",
+  "formatVersion": 1,
+  "id": "red",
+  "name": "Red Neon",
+  "description": "Consola industrial negra con metal oscuro, iluminación roja y visualizadores reactivos.",
+  "version": "1.0.0",
+  "author": "LYQENTRA",
+  "preview": "assets/skins/red-neon-pack/preview.jpg",
+  "layout": "red-console",
+  "theme": {
+    "accent": "#FF2638",
+    "accentSecondary": "#FF6673",
+    "accentRgb": "255,38,56",
+    "secondaryRgb": "255,102,115",
+    "background": "#080304",
+    "surface": "#16090B",
+    "panel": "#210D10",
+    "text": "#FFF7F7",
+    "muted": "#C5AEB1"
+  },
+  "assets": {
+    "background": "assets/skins/red-neon-pack/background.svg",
+    "headphones": "assets/skins/red-neon-pack/headphones.webp",
+    "waveform": "assets/skins/red-neon-pack/waveform.svg",
+    "sideEqualizer": "assets/skins/red-neon-pack/side-equalizer.svg",
+    "ringVisualizer": "assets/skins/red-neon-pack/ring-visualizer.svg",
+    "playerFrame": "assets/skins/red-neon-pack/player-frame.svg",
+    "songPanel": "assets/skins/red-neon-pack/song-panel.svg",
+    "queuePanel": "assets/skins/red-neon-pack/queue-panel.svg",
+    "wordmark": "assets/skins/red-neon-pack/wordmark.svg",
+    "volume": "assets/skins/red-neon-pack/volume.svg",
+    "progress": "assets/skins/red-neon-pack/progress.svg"
+  },
+  "controls": {
+    "play": "assets/skins/red-neon-pack/controls/play.svg",
+    "pause": "assets/skins/red-neon-pack/controls/pause.svg",
+    "previous": "assets/skins/red-neon-pack/controls/previous.svg",
+    "next": "assets/skins/red-neon-pack/controls/next.svg",
+    "repeat": "assets/skins/red-neon-pack/controls/repeat.svg",
+    "shuffle": "assets/skins/red-neon-pack/controls/shuffle.svg",
+    "favorite": "assets/skins/red-neon-pack/controls/favorite.svg",
+    "equalizer": "assets/skins/red-neon-pack/controls/equalizer.svg",
+    "menu": "assets/skins/red-neon-pack/controls/menu.svg",
+    "search": "assets/skins/red-neon-pack/controls/search.svg",
+    "more": "assets/skins/red-neon-pack/controls/more.svg",
+    "queue": "assets/skins/red-neon-pack/controls/queue.svg"
+  },
+  "actions": [
+    "playback.toggle",
+    "playback.previous",
+    "playback.next",
+    "playback.shuffle",
+    "playback.repeat",
+    "playback.favorite",
+    "playback.seek",
+    "playback.volume",
+    "navigation.menu",
+    "navigation.search",
+    "navigation.queue",
+    "navigation.equalizer"
+  ],
+  "positions": {
+    "favorite": {
+      "x": 9,
+      "y": 61,
+      "width": 12,
+      "height": 8
+    },
+    "queue": {
+      "x": 89,
+      "y": 61,
+      "width": 12,
+      "height": 8
+    },
+    "repeat": {
+      "x": 15,
+      "y": 84,
+      "width": 14,
+      "height": 12
+    },
+    "previous": {
+      "x": 33,
+      "y": 84,
+      "width": 14,
+      "height": 12
+    },
+    "play": {
+      "x": 50,
+      "y": 84,
+      "width": 22,
+      "height": 17
+    },
+    "next": {
+      "x": 67,
+      "y": 84,
+      "width": 14,
+      "height": 12
+    },
+    "shuffle": {
+      "x": 85,
+      "y": 84,
+      "width": 14,
+      "height": 12
+    }
+  },
+  "security": {
+    "scriptsAllowed": false,
+    "networkAllowed": false,
+    "nativeAccessAllowed": false
+  }
+}
