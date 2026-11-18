@@ -2621,3 +2621,97 @@ html[data-pulso-skin="red"] .app-footer strong {
   html[data-pulso-skin="red"] .red-headphones-wrap { left: 12%; width: 76%; }
   html[data-pulso-skin="red"] .player-controls .play-btn { flex-basis: 68px; width: 68px; height: 68px; }
 }
+
+
+/* Red Neon: recursos del paquete oficial */
+html[data-pulso-skin="red"] .red-neon-stage {
+  background:
+    linear-gradient(180deg, rgba(0,0,0,.12), rgba(0,0,0,.2)),
+    url("assets/skins/red-neon-pack/background.svg") center / 100% 100% no-repeat,
+    #080304;
+}
+html[data-pulso-skin="red"] .red-console-frame {
+  position:absolute;
+  z-index:7;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:fill;
+  pointer-events:none;
+}
+html[data-pulso-skin="red"] .red-console-wordmark {
+  position:absolute;
+  z-index:8;
+  top:3.2%;
+  left:50%;
+  width:34%;
+  max-height:8%;
+  object-fit:contain;
+  transform:translateX(-50%);
+  filter:drop-shadow(0 0 7px rgba(255,38,56,.75));
+  pointer-events:none;
+}
+html[data-pulso-skin="red"] .visual-stage::before,
+html[data-pulso-skin="red"] .visual-stage::after {
+  display:none;
+}
+html[data-pulso-skin="red"] .red-neon-topline {
+  display:flex;
+  top:12%;
+  left:9%;
+  right:9%;
+  z-index:8;
+  font-size:8px;
+  letter-spacing:1.5px;
+  opacity:.8;
+}
+html[data-pulso-skin="red"] .red-headphones-wrap {
+  z-index:4;
+  top:17%;
+  left:16%;
+  width:68%;
+  height:64%;
+}
+html[data-pulso-skin="red"] .red-waveform-art {
+  display:block;
+  z-index:3;
+  top:39%;
+  left:13%;
+  width:74%;
+  height:27%;
+  opacity:calc(.38 + var(--red-bass,0)*.55);
+  object-fit:contain;
+}
+html[data-pulso-skin="red"] .red-waveform {
+  top:43%;
+  left:23%;
+  right:23%;
+  height:22%;
+  z-index:5;
+}
+html[data-pulso-skin="red"] .red-side-eq {
+  z-index:6;
+  top:31%;
+  bottom:19%;
+  width:7%;
+}
+html[data-pulso-skin="red"] .red-neon-bottomline {
+  display:flex;
+  position:absolute;
+  z-index:8;
+  left:9%;
+  right:9%;
+  bottom:5%;
+  justify-content:space-between;
+  color:#d4bfc1;
+  font-size:8px;
+  letter-spacing:1.3px;
+}
+html[data-pulso-skin="red"] .red-reactor-status {
+  color:#ff5363;
+  text-shadow:0 0 8px #ff2638;
+}
+@media (max-width:390px) {
+  html[data-pulso-skin="red"] .red-neon-topline { top:11%; font-size:7px; }
+  html[data-pulso-skin="red"] .red-headphones-wrap { top:19%; left:17%; width:66%; }
+}
