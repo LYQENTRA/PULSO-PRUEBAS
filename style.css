@@ -2715,3 +2715,11 @@ html[data-pulso-skin="red"] .red-reactor-status {
   html[data-pulso-skin="red"] .red-neon-topline { top:11%; font-size:7px; }
   html[data-pulso-skin="red"] .red-headphones-wrap { top:19%; left:17%; width:66%; }
 }
+
+
+html[data-pulso-skin="red"] .red-console-frame { z-index: 7; pointer-events: none; }
+html[data-pulso-skin="red"] .red-headphones-wrap { z-index: 5; }
+html[data-pulso-skin="red"] .red-waveform-art { z-index: 4; }
+html[data-pulso-skin="red"] .red-waveform { z-index: 6; }
+html[data-pulso-skin="red"] .brand-logo,
+html[data-pulso-skin="red"] .drawer-logo-image { filter: hue-rotate(112deg) saturate(1.7) drop-shadow(0 0 7px rgba(255,25,45,.8)); }
